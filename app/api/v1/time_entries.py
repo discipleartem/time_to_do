@@ -360,7 +360,6 @@ async def update_time_entry(
 
         # Если оба времени указаны, рассчитываем duration
         if start_time and end_time:
-
             # Приводим к timezone-aware если нужно
             if hasattr(start_time, "tzinfo") and start_time.tzinfo is None:
                 start_time = start_time.replace(tzinfo=UTC)
