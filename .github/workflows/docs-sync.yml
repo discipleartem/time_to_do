@@ -1,0 +1,70 @@
+name: Sync Documentation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'app/**/*.py'
+      - 'app/api/v1/*.py'
+      - 'app/models/*.py'
+      - 'app/schemas/*.py'
+      - 'pyproject.toml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**/*.py'
+      - 'app/api/v1/*.py'
+      - 'app/models/*.py'
+      - 'app/schemas/*.py'
+      - 'pyproject.toml'
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install fastapi-autodoc  # для автоматической генерации документации API
+
+    - name: Generate API documentation
+      run: |
+        python scripts/generate_api_docs.py
+
+    - name: Update architecture documentation
+      run: |
+        python scripts/update_architecture_docs.py
+
+    - name: Update README.md
+      run: |
+        python scripts/update_readme.py
+
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Commit and push changes
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/ README.md
+        git commit -m "📚 Auto-update documentation [skip ci]"
+        git push

@@ -1,0 +1,45 @@
+# Render.com configuration for Time to DO
+
+services:
+  # FastAPI Web Service
+  - type: web
+    name: timetodo-api
+    env: python
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    healthCheckGracePeriod: 60
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: false
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_REDIRECT_URI
+        value: https://timetodo-api.onrender.com/api/v1/github/callback
+        sync: false
+      - key: CORS_ORIGINS
+        value: '["https://timetodo-api.onrender.com"]'
+        sync: false
+
+  # PostgreSQL Database
+  - type: pserv
+    name: timetodo-db
+    plan: free
+    databaseName: timetodo
+    user: postgres
+
+  # Redis Cache
+  - type: redis
+    name: timetodo-redis
+    plan: free

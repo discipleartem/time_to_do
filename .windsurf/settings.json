@@ -1,0 +1,29 @@
+{
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "bash",
+      "args": ["--rcfile", "/home/tomas/WORK/task_to_do/.windsurf/terminal.bashrc", "-i"]
+    }
+  },
+  "terminal.integrated.env.linux": {
+    "VIRTUAL_ENV": "/home/tomas/WORK/task_to_do/.venv",
+    "PYTHONPATH": "/home/tomas/WORK/task_to_do",
+    "PATH": "/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+  },
+  "python.linting.enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.formatting.provider": "black",
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    ".pytest_cache": true,
+    ".mypy_cache": true,
+    ".coverage": true,
+    "htmlcov": true
+  }
+}

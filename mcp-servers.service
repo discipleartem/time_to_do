@@ -1,0 +1,14 @@
+[Unit]
+Description=MCP Servers Proxy
+After=network.target
+
+[Service]
+Type=forking
+User=tomas
+WorkingDirectory=/home/tomas/WORK/task_to_do
+ExecStart=/home/tomas/WORK/task_to_do/scripts/mcp-background.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,60 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/home/tomas/WORK/task_to_do"],
+      "description": "File system access for Time to DO project"
+    },
+    "git": {
+      "command": "npx",
+      "args": ["@cyanheads/git-mcp-server", "/home/tomas/WORK/task_to_do"],
+      "description": "Git repository access for version control"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp"],
+      "description": "Browser automation and UI testing"
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp"],
+      "description": "Chrome DevTools for debugging"
+    },
+    "code-runner": {
+      "command": "npx",
+      "args": ["mcp-server-code-runner"],
+      "description": "Code execution in multiple languages"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["@upstash/context7-mcp"],
+      "description": "Context management and documentation"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-memory"],
+      "description": "Session memory management"
+    },
+    "apify": {
+      "command": "npx",
+      "args": ["@apify/actors-mcp-server"],
+      "description": "Web scraping and automation",
+      "env": {
+        "APIFY_TOKEN": "${APIFY_TOKEN}"
+      }
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["@notionhq/notion-mcp-server"],
+      "description": "Notion integration for documentation",
+      "env": {
+        "NOTION_API_KEY": "${NOTION_API_KEY}"
+      }
+    }
+  },
+  "globalSettings": {
+    "timeout": 30000,
+    "retries": 3,
+    "logLevel": "info"
+  }
+}
