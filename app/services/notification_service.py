@@ -106,7 +106,7 @@ class NotificationService:
         """Уведомление о назначении задачи"""
         return await self.create_notification(
             user_id=assignee_id,
-            notification_type="task_assigned",  # type: ignore
+            notification_type=NotificationType(NotificationType.TASK_ASSIGNED),
             title="Новая задача",
             message=f"{assigner_name} назначил(а) вам задачу: {task_title}",
             data={
@@ -171,7 +171,7 @@ class NotificationService:
         """Уведомление о приглашении в проект"""
         return await self.create_notification(
             user_id=invited_user_id,
-            notification_type="project_invited",  # type: ignore
+            notification_type=NotificationType(NotificationType.PROJECT_INVITED),
             title="Приглашение в проект",
             message=f"{inviter_name} пригласил(а) вас в проект: {project_name}",
             data={
@@ -214,7 +214,7 @@ class NotificationService:
         for notification_data in notifications:
             notification = await self.create_notification(
                 user_id=notification_data["user_id"],
-                notification_type=notification_data["type"],
+                notification_type=NotificationType(notification_data["type"]),
                 title=notification_data["title"],
                 message=notification_data["message"],
                 data=notification_data.get("data"),

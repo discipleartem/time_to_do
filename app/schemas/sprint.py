@@ -5,7 +5,7 @@
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 
 class SprintBase(BaseModel):
@@ -102,6 +102,20 @@ class Sprint(SprintBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_serializer("start_date", "end_date", when_used="always")
+    def serialize_date(self, value: date | None) -> str | None:
+        return value.isoformat() if value else None
+
+    @field_serializer("created_at", "updated_at", when_used="always")
+    def serialize_datetime(self, value: datetime) -> str:
+        return value.isoformat()
+
+    @field_validator("id", "project_id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Конвертирует UUID в строку"""
+        return str(v) if v is not None else None
+
 
 class SprintWithDetails(Sprint):
     """Спринт с дополнительной информацией"""
@@ -157,6 +171,16 @@ class SprintTask(SprintTaskBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_serializer("created_at", "updated_at", when_used="always")
+    def serialize_datetime(self, value: datetime) -> str:
+        return value.isoformat()
+
+    @field_validator("id", "sprint_id", "task_id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Конвертирует UUID в строку"""
+        return str(v) if v is not None else None
+
 
 class SprintTaskWithDetails(SprintTask):
     """Задача спринта с деталями"""
@@ -202,6 +226,10 @@ class BurndownData(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_serializer("date", when_used="always")
+    def serialize_date(self, date_value: Any) -> str:
+        return str(date_value)
+
 
 class SprintBurndown(BaseModel):
     """Burndown chart для спринта"""
@@ -214,6 +242,10 @@ class SprintBurndown(BaseModel):
     data: list[BurndownData] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("start_date", "end_date", when_used="always")
+    def serialize_date(self, value: date) -> str:
+        return value.isoformat()
 
 
 class VelocityData(BaseModel):

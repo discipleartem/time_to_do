@@ -179,11 +179,11 @@ class AuthService:
                 user = await self.get_user_by_email(github_user.email)
                 if user:
                     # Обновляем существующего пользователя
-                    user.github_id = str(github_user.id)  # type: ignore
-                    user.github_username = github_user.login  # type: ignore
-                    user.avatar_url = github_user.avatar_url  # type: ignore
+                    user.github_id = str(github_user.id)  # type: ignore[assignment] # SQLAlchemy String field limitation
+                    user.github_username = github_user.login  # type: ignore[assignment] # SQLAlchemy String field limitation
+                    user.avatar_url = github_user.avatar_url  # type: ignore[assignment] # SQLAlchemy String field limitation
                     if not user.full_name and github_user.name:
-                        user.full_name = github_user.name  # type: ignore
+                        user.full_name = github_user.name  # type: ignore[assignment] # SQLAlchemy String field limitation
                     await self.db.commit()
                     await self.db.refresh(user)
                 else:
@@ -273,7 +273,7 @@ class AuthService:
         if not verify_password(current_password, str(user.hashed_password)):
             return False
 
-        user.hashed_password = get_password_hash(new_password)  # type: ignore
+        user.hashed_password = get_password_hash(new_password)  # type: ignore[assignment] # SQLAlchemy String field limitation
         await self.db.commit()
 
         return True

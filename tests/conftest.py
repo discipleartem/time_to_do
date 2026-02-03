@@ -158,7 +158,7 @@ def test_user_data():
         "email": "test@example.com",
         "username": "testuser",
         "full_name": "Test User",
-        "hashed_password": "hashed_test_password_123",
+        "password": "testpassword123",
     }
 
 

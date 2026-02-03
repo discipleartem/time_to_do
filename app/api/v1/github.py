@@ -230,8 +230,8 @@ async def disconnect_github(
         )
 
     # Отключаем GitHub
-    current_user.github_id = None  # type: ignore
-    current_user.github_username = None  # type: ignore
+    current_user.github_id = None  # type: ignore[assignment] # SQLAlchemy String field limitation
+    current_user.github_username = None  # type: ignore[assignment] # SQLAlchemy String field limitation
 
     await db.commit()
 

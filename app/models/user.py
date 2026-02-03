@@ -148,42 +148,42 @@ class User(BaseModel):
     @property
     def email_str(self) -> str:
         """Email как строка для схем"""
-        return self.email  # type: ignore
+        return self.email
 
     @property
     def username_str(self) -> str | None:
         """Username как строка для схем"""
-        return self.username  # type: ignore
+        return self.username
 
     @property
     def full_name_str(self) -> str | None:
         """Full name как строка для схем"""
-        return self.full_name  # type: ignore
+        return self.full_name
 
     @property
     def avatar_url_str(self) -> str | None:
         """Avatar URL как строка для схем"""
-        return self.avatar_url  # type: ignore
+        return self.avatar_url
 
     @property
     def is_active_bool(self) -> bool:
         """Is active как bool для схем"""
-        return self.is_active  # type: ignore
+        return self.is_active
 
     @property
     def is_verified_bool(self) -> bool:
         """Is verified как bool для схем"""
-        return self.is_verified  # type: ignore
+        return self.is_verified
 
     @property
     def github_id_str(self) -> str | None:
         """GitHub ID как строка для схем"""
-        return self.github_id  # type: ignore
+        return self.github_id
 
     @property
     def github_username_str(self) -> str | None:
         """GitHub username как строка для схем"""
-        return self.github_username  # type: ignore
+        return self.github_username
 
     time_entries = relationship(
         "TimeEntry",
@@ -197,14 +197,14 @@ class User(BaseModel):
     @property
     def is_admin(self) -> bool:
         """Является ли пользователь администратором"""
-        return self.role == UserRole.ADMIN  # type: ignore
+        return self.role == UserRole.ADMIN
 
     @property
     def display_name(self) -> str:
         """Отображаемое имя пользователя"""
-        if self.full_name:  # type: ignore
-            return self.full_name  # type: ignore
-        elif self.username:  # type: ignore
-            return self.username  # type: ignore
+        if self.full_name:
+            return self.full_name
+        elif self.username:
+            return self.username
         else:
             return self.email

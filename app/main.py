@@ -95,9 +95,7 @@ async def root(request: Request) -> HTMLResponse:
     """
     Главная страница приложения
     """
-    return templates.TemplateResponse(
-        "index.html", {"request": request, "settings": settings}
-    )
+    return templates.TemplateResponse(request, "index.html", {"settings": settings})
 
 
 @app.get("/projects", response_class=HTMLResponse)
@@ -109,8 +107,9 @@ async def projects_page(request: Request) -> HTMLResponse:
     projects: list[dict[str, str]] = []
 
     return templates.TemplateResponse(
+        request,
         "projects.html",
-        {"request": request, "settings": settings, "projects": projects},
+        {"settings": settings, "projects": projects},
     )
 
 
@@ -129,8 +128,9 @@ async def project_kanban(request: Request, project_id: str) -> HTMLResponse:
     tasks: list[dict[str, Any]] = []
 
     return templates.TemplateResponse(
+        request,
         "kanban.html",
-        {"request": request, "settings": settings, "project": project, "tasks": tasks},
+        {"settings": settings, "project": project, "tasks": tasks},
     )
 
 

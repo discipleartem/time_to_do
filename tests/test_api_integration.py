@@ -26,9 +26,8 @@ class TestAPIIntegration:
         response = await client.get("/")
 
         assert response.status_code == 200
-        data = response.json()
-        assert "message" in data
-        assert "version" in data
+        # Проверяем, что ответ содержит HTML
+        assert "text/html" in response.headers["content-type"]
 
     # Тесты аутентификации
     @pytest.mark.asyncio

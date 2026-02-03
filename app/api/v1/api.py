@@ -8,6 +8,7 @@ from app.api.v1 import (
     auth_router,
     github_router,
     projects_router,
+    sprints_router,
     tasks_router,
     time_entries_router,
     users_router,
@@ -55,4 +56,10 @@ api_router.include_router(
     time_entries_router,
     prefix="/time-entries",
     tags=["Time Tracking"],
+)
+
+# Спринты
+api_router.include_router(
+    sprints_router,
+    tags=["SCRUM"],
 )

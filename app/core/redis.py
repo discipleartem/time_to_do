@@ -145,7 +145,7 @@ class RedisService:
         """
         try:
             serialized_values = [json.dumps(v, default=str) for v in values]
-            return await self.redis.lpush(key, *serialized_values)  # type: ignore[misc]
+            return await self.redis.lpush(key, *serialized_values)  # type: ignore[misc] # Redis library lacks complete typing for variadic args
         except Exception:
             return None
 
@@ -160,7 +160,7 @@ class RedisService:
             Optional[Any]: Значение или None
         """
         try:
-            value = await self.redis.rpop(key)  # type: ignore[misc]
+            value = await self.redis.rpop(key)  # type: ignore[misc] # Redis library typing doesn't distinguish None vs empty string
             if value is None:
                 return None
             return json.loads(value)

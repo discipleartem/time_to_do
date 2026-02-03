@@ -285,8 +285,8 @@ async def update_task_comment(
             detail="Только автор может редактировать комментарий",
         )
 
-    comment.content = comment_data.content  # type: ignore
-    comment.is_edited = True  # type: ignore
+    comment.content = comment_data.content  # type: ignore[assignment] # SQLAlchemy Text field limitation
+    comment.is_edited = True  # type: ignore[assignment] # SQLAlchemy Boolean field limitation
 
     await db.commit()
     await db.refresh(comment)

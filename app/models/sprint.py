@@ -130,9 +130,9 @@ class Sprint(BaseModel):
     @property
     def completion_percentage(self) -> float:
         """Процент выполнения спринта"""
-        if self.velocity_points == 0:  # type: ignore
+        if self.velocity_points is None or self.velocity_points == 0:
             return 0.0
-        return (self.completed_points / self.velocity_points) * 100  # type: ignore
+        return (self.completed_points / self.velocity_points) * 100
 
     @property
     def task_count(self) -> int:

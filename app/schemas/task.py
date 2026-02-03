@@ -114,6 +114,7 @@ class Task(TaskBase):
     order: int = 0
     actual_hours: int = 0
     is_archived: bool = False
+    story_points: int = 0  # Числовое значение Story Points
     created_at: datetime
     updated_at: datetime
 

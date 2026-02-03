@@ -81,7 +81,7 @@ class TimeEntry(BaseModel):
         """Длительность в часах"""
         if self.duration_minutes is None:
             return 0.0
-        return self.duration_minutes / 60.0  # type: ignore
+        return self.duration_minutes / 60.0
 
     @property
     def formatted_duration(self) -> str:

@@ -183,7 +183,7 @@ class UserService:
         if not user:
             return False
 
-        user.hashed_password = get_password_hash(new_password)  # type: ignore
+        user.hashed_password = get_password_hash(new_password)
         await self.db.commit()
 
         return True
@@ -195,7 +195,7 @@ class UserService:
         if not user:
             return False
 
-        user.is_active = False  # type: ignore
+        user.is_active = False
         await self.db.commit()
 
         return True
@@ -207,7 +207,7 @@ class UserService:
         if not user:
             return False
 
-        user.is_active = True  # type: ignore
+        user.is_active = True
         await self.db.commit()
 
         return True
@@ -219,7 +219,7 @@ class UserService:
         if not user:
             return False
 
-        user.is_verified = True  # type: ignore
+        user.is_verified = True
         await self.db.commit()
 
         return True
@@ -276,8 +276,8 @@ class UserService:
             is_verified=user.is_verified_bool,
             github_id=user.github_id_str,
             github_username=user.github_username_str,
-            created_at=user.created_at,  # type: ignore
-            updated_at=user.updated_at,  # type: ignore
+            created_at=user.created_at,
+            updated_at=user.updated_at,
             project_count=project_count,
             task_count=task_count,
             completed_task_count=completed_task_count,

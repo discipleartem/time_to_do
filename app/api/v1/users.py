@@ -52,8 +52,8 @@ async def get_current_user_profile(
         avatar_url=str(current_user.avatar_url) if current_user.avatar_url else None,
         is_active=bool(current_user.is_active),
         role=UserRole(current_user.role),
-        created_at=current_user.created_at,  # type: ignore
-        updated_at=current_user.updated_at,  # type: ignore
+        created_at=current_user.created_at,  # type: ignore[assignment] # SQLAlchemy DateTime field limitation
+        updated_at=current_user.updated_at,  # type: ignore[assignment] # SQLAlchemy DateTime field limitation
         is_verified=bool(current_user.is_verified),
         github_id=str(current_user.github_id) if current_user.github_id else None,
         github_username=(

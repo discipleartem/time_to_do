@@ -222,6 +222,21 @@ class Task(BaseModel):
         return f"<Task(title={self.title}, status={self.status})>"
 
     @property
+    def story_points(self) -> int:
+        """Получение числового значения Story Points"""
+        story_points_map = {
+            StoryPoint.ONE: 1,
+            StoryPoint.TWO: 2,
+            StoryPoint.THREE: 3,
+            StoryPoint.FIVE: 5,
+            StoryPoint.EIGHT: 8,
+            StoryPoint.THIRTEEN: 13,
+            StoryPoint.TWENTY_ONE: 21,
+            StoryPoint.UNKNOWN: 0,
+        }
+        return story_points_map.get(self.story_point, 0)
+
+    @property
     def has_subtasks(self) -> bool:
         """Есть ли подзадачи"""
         # Используем backref relationship для mypy

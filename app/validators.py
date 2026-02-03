@@ -337,7 +337,8 @@ class TaskValidator(BaseValidator):
             TaskStatus.BLOCKED: [TaskStatus.TODO, TaskStatus.IN_PROGRESS],
         }
 
-        if new_status not in allowed_transitions.get(task.status, []):  # type: ignore
+        current_transitions = allowed_transitions.get(task.status, [])
+        if new_status not in current_transitions:
             raise BusinessLogicError(
                 f"Недопустимый переход статуса: {task.status} -> {new_status}",
                 code="INVALID_STATUS_TRANSITION",

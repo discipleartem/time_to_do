@@ -247,7 +247,7 @@ class TaskService:
         if hasattr(task_data, "model_dump"):
             update_data: dict[str, Any] = task_data.model_dump(exclude_unset=True)
         else:
-            update_data = task_data  # type: ignore
+            update_data = dict(task_data)  # Явное преобразование в словарь
         for field, value in update_data.items():
             setattr(task, field, value)
 
@@ -307,12 +307,13 @@ class TaskService:
 
             next_order = (max_order.scalar() or 0) + 1
 
-            task.status = new_status  # type: ignore
-            task.order = next_order  # type: ignore
+            # SQLAlchemy 2.0: используем строковые значения для enum полей
+            task.status = new_status  # type: ignore[assignment] # SQLAlchemy Enum field limitation
+            task.order = next_order  # type: ignore[assignment] # SQLAlchemy Integer field limitation
         else:
             # Если тот же статус, обновляем только порядок
             if data.get("order") is not None:
-                task.order = data["order"]  # type: ignore
+                task.order = data["order"]  # type: ignore[assignment] # SQLAlchemy Integer field limitation
 
         await self.db.commit()
         await self.db.refresh(task, ["project", "creator", "assignee"])
@@ -399,8 +400,8 @@ class TaskService:
             raise ValueError("Можно редактировать только свои комментарии")
 
         # Обновляем контент
-        comment.content = content  # type: ignore
-        comment.is_edited = True  # type: ignore
+        comment.content = content  # type: ignore[assignment] # SQLAlchemy Text field limitation
+        comment.is_edited = True  # type: ignore[assignment] # SQLAlchemy Boolean field limitation
 
         await self.db.commit()
         await self.db.refresh(comment, ["task", "author"])
@@ -634,7 +635,7 @@ class TaskService:
                     other_task.order -= 1
 
         # Устанавливаем новый порядок для перемещаемой задачи
-        task.order = new_order  # type: ignore
+        task.order = new_order  # type: ignore[assignment] # SQLAlchemy Integer field limitation
 
         await self.db.commit()
         await self.db.refresh(task, ["project", "creator", "assignee"])
@@ -671,7 +672,7 @@ class TaskService:
         if not assignee_exists.scalar_one_or_none():
             raise ValueError("Исполнитель не является участником проекта")
 
-        task.assignee_id = assignee_id  # type: ignore
+        task.assignee_id = uuid.UUID(assignee_id)
         await self.db.commit()
         await self.db.refresh(task, ["project", "creator", "assignee"])
 
