@@ -30,7 +30,9 @@ jobs:
         echo "🔍 Waiting for deployment to complete..."
         sleep 120  # Wait longer for Render deployment
 
-        # Health check (adjust URL to your actual Render URL)
+        # Health check (замените на ваш реальный URL Render)
+        # Пример: https://your-app-name.onrender.com/health
+        echo "⚠️ Замените 'your-app.onrender.com' на ваш реальный домен в Render"
         response=$(curl -s -o /dev/null -w "%{http_code}" https://your-app.onrender.com/health 2>/dev/null || echo "000")
 
         if [ "$response" = "200" ]; then

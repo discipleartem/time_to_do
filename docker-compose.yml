@@ -15,6 +15,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./.env:/app/.env:ro
       - ./app:/app/app
       - ./uploads:/app/uploads
       - ./logs:/app/logs
