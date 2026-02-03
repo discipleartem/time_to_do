@@ -37,6 +37,11 @@ make dev
 - [**TERMINAL_SETUP.md**](./docs/TERMINAL_SETUP.md) - Настройка терминала
 - [**get-tokens.md**](./docs/get-tokens.md) - Получение токенов
 
+### 🤖 AI Assistant
+- [**cascade_algorithm.md**](./.windsurf/rules/cascade_algorithm.md) - Алгоритм работы Cascade AI агента
+- **Global Rules Priority:** Global Rules → Project Rules → Context Rules
+- **Agent Workflow:** Анализ → Планирование → Действие → Проверка
+
 ### 📈 Планирование
 - [**development-plan.md**](./docs/development-plan.md) - Детальный план разработки
 

@@ -99,6 +99,9 @@ fi
 echo "🔄 Синхронизация с Poetry..."
 if [ -f "pyproject.toml" ]; then
     poetry env use .venv/bin/python
+    echo "🔐 Обновление poetry.lock..."
+    poetry lock
+    echo "📦 Синхронизация зависимостей..."
     poetry sync
     echo "✅ Poetry синхронизирован"
 else

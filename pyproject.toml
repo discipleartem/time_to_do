@@ -63,7 +63,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
-target-version = ['py312']  # Соответствует Python 3.12 для совместимости с Ruff
+target-version = ['py312']  # Соответствует Python 3.12
 include = '\.pyi?$'
 extend-exclude = '''
 /(

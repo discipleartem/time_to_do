@@ -8,7 +8,6 @@ from uuid import uuid4
 import pytest
 
 from app.exceptions import (
-    NotFoundError,
     ValidationError,
 )
 from app.validators import (
@@ -396,14 +395,15 @@ class TestProjectTaskValidator:
     @pytest.mark.asyncio
     async def test_validate_bulk_task_operations_max_allowed(self):
         """Тест валидации максимального разрешенного количества задач"""
-        task_ids = [str(uuid4()) for _ in range(100)]
-        user_id = str(uuid4())  # Используем валидный UUID
+        # Проверяем валидацию количества (101 задача должно вызвать ошибку)
+        task_ids = [str(uuid4()) for _ in range(101)]
+        user_id = str(uuid4())
 
-        # Должно пройти без исключений (но упадет на валидации доступа к задачам)
-        with pytest.raises(
-            NotFoundError
-        ):  # Ожидаемая ошибка, т.к. задачи не существуют
+        # Должно упасть на валидации количества (до доступа к БД)
+        with pytest.raises(ValidationError) as exc_info:
             await ProjectTaskValidator.validate_bulk_task_operations(task_ids, user_id)
+
+        assert "Нельзя обрабатывать более 100 задач" in str(exc_info.value)
 
 
 class TestValidatorEdgeCases:
