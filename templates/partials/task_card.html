@@ -1,0 +1,63 @@
+<div class="card kanban-task priority-{{ task.priority }}"
+     data-task-id="{{ task.id }}"
+     data-status="{{ task.status }}"
+     data-priority="{{ task.priority }}"
+     data-assignee-id="{{ task.assignee_id or '' }}"
+     draggable="true"
+     onclick="showTaskDetail('{{ task.id }}')">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge bg-{{ 'success' if task.priority == 'low' else 'warning' if task.priority == 'medium' else 'danger' }}">
+                {{ 'Низкий' if task.priority == 'low' else 'Средний' if task.priority == 'medium' else 'Высокий' }}
+            </span>
+            {% if task.story_points %}
+            <span class="badge bg-info">{{ task.story_points }}</span>
+            {% endif %}
+        </div>
+
+        <h6 class="card-title task-title">{{ task.title }}</h6>
+
+        {% if task.description %}
+        <p class="card-text text-muted small text-truncate-2">{{ task.description }}</p>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                {% if task.assignee %}
+                <img src="{{ task.assignee.avatar or '/static/images/default-avatar.png' }}"
+                     class="avatar-sm me-1"
+                     title="{{ task.assignee.full_name or task.assignee.username }}"
+                     alt="{{ task.assignee.full_name or task.assignee.username }}">
+                {% endif %}
+                {% if task.due_date %}
+                <small class="text-muted">
+                    <i class="bi bi-calendar me-1"></i>
+                    {{ task.due_date.strftime('%d.%m') if task.due_date else '' }}
+                </small>
+                {% endif %}
+            </div>
+
+            <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-primary"
+                        onclick="event.stopPropagation(); startTimer('{{ task.id }}')"
+                        title="Запустить таймер">
+                    <i class="bi bi-play-fill"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary"
+                        onclick="event.stopPropagation(); editTask('{{ task.id }}')"
+                        title="Редактировать">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Теги -->
+        {% if task.tags %}
+        <div class="mt-2">
+            {% for tag in task.tags %}
+            <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>

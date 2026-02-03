@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}{{ settings.PROJECT_NAME }} - Система управления задачами{% endblock %}
+
+{% block content %}
+<!-- Hero секция -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 bg-primary text-white">
+            <div class="card-body text-center py-5">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="bi bi-check2-square me-3"></i>
+                    {{ settings.PROJECT_NAME }}
+                </h1>
+                <p class="lead mb-4">
+                    Современная система управления задачами с поддержкой SCRUM/Kanban методологий
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/projects" class="btn btn-light btn-lg">
+                        <i class="bi bi-folder me-2"></i>
+                        Мои проекты
+                    </a>
+                    <a href="/api/v1/docs" class="btn btn-outline-light btn-lg" target="_blank">
+                        <i class="bi bi-book me-2"></i>
+                        API документация
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Функции -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Возможности системы</h2>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="bi bi-kanban display-4 text-primary"></i>
+                </div>
+                <h5 class="card-title">Kanban доски</h5>
+                <p class="card-text">
+                    Визуальное управление задачами с drag & drop интерфейсом
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="bi bi-clock-history display-4 text-success"></i>
+                </div>
+                <h5 class="card-title">Time Tracker</h5>
+                <p class="card-text">
+                    Отслеживание времени выполнения задач и генерация отчетов
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="bi bi-people display-4 text-warning"></i>
+                </div>
+                <h5 class="card-title">Командная работа</h5>
+                <p class="card-text">
+                    Совместная работа над проектами в реальном времени
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Системная статистика
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-primary" id="totalProjects">0</div>
+                            <div class="stat-label">Проектов</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-success" id="totalTasks">0</div>
+                            <div class="stat-label">Задач</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-warning" id="completedTasks">0</div>
+                            <div class="stat-label">Выполнено</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-info" id="totalUsers">0</div>
+                            <div class="stat-label">Пользователей</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрые действия -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>
+                    Быстрые действия
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#quickCreateProjectModal">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Создать новый проект
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-outline-success w-100" onclick="location.href='/projects'">
+                            <i class="bi bi-folder-open me-2"></i>
+                            Открыть проекты
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно быстрого создания проекта -->
+<div class="modal fade" id="quickCreateProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-folder-plus me-2"></i>
+                    Создание проекта
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="quickCreateProjectForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="quickProjectName" class="form-label">Название проекта *</label>
+                        <input type="text" class="form-control" id="quickProjectName" name="name" required
+                               placeholder="Введите название проекта...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickProjectDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="quickProjectDescription" name="description" rows="3"
+                                  placeholder="Опишите цели и задачи проекта..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Загрузка статистики при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatistics();
+
+    // Обработка формы создания проекта
+    document.getElementById('quickCreateProjectForm').addEventListener('submit', handleQuickCreateProject);
+});
+
+// Загрузка статистики
+async function loadStatistics() {
+    try {
+        // Временные данные - будут заменены на реальные API вызовы
+        const stats = {
+            totalProjects: 0,
+            totalTasks: 0,
+            completedTasks: 0,
+            totalUsers: 0
+        };
+
+        // Анимация счетчиков
+        animateCounter('totalProjects', stats.totalProjects);
+        animateCounter('totalTasks', stats.totalTasks);
+        animateCounter('completedTasks', stats.completedTasks);
+        animateCounter('totalUsers', stats.totalUsers);
+
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+    }
+}
+
+// Анимация счетчика
+function animateCounter(elementId, targetValue) {
+    const element = document.getElementById(elementId);
+    const duration = 1000; // 1 секунда
+    const steps = 30;
+    const stepValue = targetValue / steps;
+    let currentValue = 0;
+    let step = 0;
+
+    const timer = setInterval(() => {
+        step++;
+        currentValue = Math.round(stepValue * step);
+        element.textContent = currentValue;
+
+        if (step >= steps) {
+            element.textContent = targetValue;
+            clearInterval(timer);
+        }
+    }, duration / steps);
+}
+
+// Обработка быстрого создания проекта
+async function handleQuickCreateProject(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const response = await fetch('/api/v1/projects', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            // Закрытие модального окна
+            const modal = bootstrap.Modal.getInstance(document.getElementById('quickCreateProjectModal'));
+            modal.hide();
+
+            // Сброс формы
+            e.target.reset();
+
+            // Перенаправление на страницу проектов
+            window.location.href = '/projects';
+
+            window.TimeToDO.showNotification({
+                type: 'success',
+                text: 'Проект успешно создан'
+            });
+        } else {
+            throw new Error('Ошибка при создании проекта');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        window.TimeToDO.showNotification({
+            type: 'error',
+            text: 'Не удалось создать проект'
+        });
+    }
+}
+</script>
+{% endblock %}

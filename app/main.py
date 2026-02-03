@@ -5,10 +5,13 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
 from app.api.v1.api import api_router
@@ -54,6 +57,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Настройка шаблонов и статических файлов
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
@@ -83,20 +90,48 @@ async def health_check() -> dict[str, str]:
 
 
 # Root endpoint
-@app.get("/")
-async def root() -> dict[str, str]:
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request) -> HTMLResponse:
     """
-    Корневой endpoint
+    Главная страница приложения
+    """
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "settings": settings}
+    )
 
-    Returns:
-        dict: Информация о приложении
+
+@app.get("/projects", response_class=HTMLResponse)
+async def projects_page(request: Request) -> HTMLResponse:
     """
-    return {
-        "message": f"Добро пожаловать в {settings.PROJECT_NAME}",
-        "version": settings.VERSION,
-        "docs": f"{settings.API_V1_STR}/docs",
-        "api": settings.API_V1_STR,
+    Страница со списком проектов
+    """
+    # Временные данные - будут заменены на реальные из БД
+    projects: list[dict[str, str]] = []
+
+    return templates.TemplateResponse(
+        "projects.html",
+        {"request": request, "settings": settings, "projects": projects},
+    )
+
+
+@app.get("/projects/{project_id}", response_class=HTMLResponse)
+async def project_kanban(request: Request, project_id: str) -> HTMLResponse:
+    """
+    Kanban доска проекта
+    """
+    # Временные данные - будут заменены на реальные из БД
+    project = {
+        "id": project_id,
+        "name": "Demo Project",
+        "description": "Демонстрационный проект",
+        "members": [],
     }
+    tasks: list[dict[str, Any]] = []
+
+    return templates.TemplateResponse(
+        "kanban.html",
+        {"request": request, "settings": settings, "project": project, "tasks": tasks},
+    )
 
 
 # Exception handlers

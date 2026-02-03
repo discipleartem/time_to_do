@@ -31,7 +31,14 @@ class TaskService:
     async def create_task(
         self, task_data: TaskCreate | dict, project_id: str, creator_id: str
     ) -> Task:
-        """Создание новой задачи"""
+        """
+        Создание новой задачи с оптимизированными async паттернами
+
+        Следует лучшим практикам:
+        - Оптимизированные запросы с selectinload
+        - Правильная обработка ошибок
+        - Эффективное использование сессии БД
+        """
         # Конвертируем TaskCreate в dict если необходимо
         if hasattr(task_data, "model_dump"):
             data = task_data.model_dump()
@@ -43,33 +50,45 @@ class TaskService:
             data = data.copy()
             del data["project_id"]
 
-        # Проверяем доступ к проекту
+        # Проверяем доступ к проекту с оптимизированным запросом
         from uuid import UUID
 
         project_uuid = UUID(project_id) if isinstance(project_id, str) else project_id
         user_uuid = UUID(creator_id) if isinstance(creator_id, str) else creator_id
-        project = await self._get_project_with_access_check(project_uuid, user_uuid)
 
-        if not project:
+        # ✅ Оптимизированный запрос с selectinload
+        project = await self.db.execute(
+            select(Project)
+            .options(selectinload(Project.members))
+            .where(Project.id == project_uuid)
+        )
+        project_result = project.scalar_one_or_none()
+
+        if not project_result:
+            raise ValueError("Проект не найден")
+
+        # ✅ Проверка доступа к проекту
+        user_has_access = any(
+            member.user_id == user_uuid and member.is_active
+            for member in project_result.members
+        )
+
+        if not user_has_access and project_result.owner_id != user_uuid:
             raise ValueError("Нет доступа к проекту")
 
-        # Проверяем существование исполнителя, если указан
+        # ✅ Оптимизированная проверка исполнителя
         if data.get("assignee_id"):
-            assignee_exists = await self.db.execute(
-                select(ProjectMember).where(
-                    and_(
-                        ProjectMember.project_id == project_id,
-                        ProjectMember.user_id == data["assignee_id"],
-                        ProjectMember.is_active,
-                    )
-                )
+            assignee_id = data["assignee_id"]
+            assignee_is_member = any(
+                member.user_id == assignee_id and member.is_active
+                for member in project_result.members
             )
 
-            if not assignee_exists.scalar_one_or_none():
+            if not assignee_is_member:
                 raise ValueError("Исполнитель не является участником проекта")
 
-        # Получаем максимальный порядок в колонке
-        max_order = await self.db.execute(
+        # ✅ Оптимизированный запрос для получения максимального порядка
+        max_order_result = await self.db.execute(
             select(func.coalesce(func.max(Task.order), 0)).where(
                 and_(
                     Task.project_id == project_id,
@@ -77,16 +96,15 @@ class TaskService:
                 )
             )
         )
+        next_order = (max_order_result.scalar() or 0) + 1
 
-        next_order = (max_order.scalar() or 0) + 1
-
-        # Создаем задачу
+        # ✅ Создаем задачу с правильными полями
         task = Task(
             title=data["title"],
-            description=data["description"],
+            description=data.get("description"),
             status=data["status"],
             priority=data["priority"],
-            story_point=data["story_point"],
+            story_point=data.get("story_point"),
             due_date=data.get("due_date"),
             estimated_hours=data.get("estimated_hours"),
             parent_task_id=data.get("parent_task_id"),
@@ -97,9 +115,12 @@ class TaskService:
         )
 
         self.db.add(task)
-        await self.db.commit()
+        await self.db.flush()  # Получаем ID без commit
+
+        # ✅ Оптимизированная загрузка связанных данных
         await self.db.refresh(task, ["project", "creator", "assignee", "parent_task"])
 
+        # commit будет выполнен автоматически через get_db()
         return task
 
     async def get_task_by_id(

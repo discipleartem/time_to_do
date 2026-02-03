@@ -34,7 +34,12 @@ AsyncSessionLocal = async_sessionmaker(
 
 async def get_db() -> AsyncGenerator[AsyncSession]:
     """
-    Получение асинхронной сессии базы данных
+    Получение асинхронной сессии базы данных с правильным управлением транзакциями
+
+    Следует лучшим практикам:
+    - Автоматический commit при успехе
+    - Rollback при ошибке
+    - Гарантированное закрытие сессии
 
     Yields:
         AsyncSession: Сессия базы данных
@@ -42,6 +47,7 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
+            await session.commit()
         except Exception:
             await session.rollback()
             raise

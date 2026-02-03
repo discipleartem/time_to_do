@@ -120,7 +120,8 @@ async def auth_headers(db_session: AsyncSession):
         else:
             raise
 
-    return {"Authorization": f"Bearer {access_token}"}
+    result = {"Authorization": f"Bearer {access_token}", "access_token": access_token}
+    return result
 
 
 @pytest_asyncio.fixture
@@ -157,7 +158,7 @@ def test_user_data():
         "email": "test@example.com",
         "username": "testuser",
         "full_name": "Test User",
-        "password": "testpassword123",
+        "hashed_password": "hashed_test_password_123",
     }
 
 

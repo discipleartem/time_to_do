@@ -7,6 +7,7 @@
 ### 🛠️ [technical/](./technical/) - Техническая документация
 - **[API.md](./technical/API.md)** - Полная документация REST API
 - **[ARCHITECTURE.md](./technical/ARCHITECTURE.md)** - Архитектура проекта и принципы
+- **[FRONTEND.md](./technical/FRONTEND.md)** - Фронтенд архитектура и компоненты
 - **[TESTING.md](./technical/TESTING.md)** - Тестирование и качество кода
 - **[DEPENDENCIES.md](./technical/DEPENDENCIES.md)** - Управление зависимостями
 - **[DEPLOYMENT.md](./technical/DEPLOYMENT.md)** - Развертывание в production
@@ -53,6 +54,7 @@
 | **Как начать разработку** | [development/DEVELOPMENT.md](./development/DEVELOPMENT.md) |
 | **API эндпоинты** | [technical/API.md](./technical/API.md) |
 | **Архитектура проекта** | [technical/ARCHITECTURE.md](./technical/ARCHITECTURE.md) |
+| **Фронтенд разработка** | [technical/FRONTEND.md](./technical/FRONTEND.md) |
 | **Настройка окружения** | [setup/](./setup/) |
 | **Развертывание** | [technical/DEPLOYMENT.md](./technical/DEPLOYMENT.md) |
 | **Тестирование** | [technical/TESTING.md](./technical/TESTING.md) |

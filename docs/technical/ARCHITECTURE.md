@@ -161,11 +161,48 @@ CREATE INDEX idx_tasks_project_id_status ON tasks(project_id, status);
 CREATE INDEX idx_tasks_assignee_id ON tasks(assignee_id);
 CREATE INDEX idx_project_members_project_user ON project_members(project_id, user_id);
 CREATE INDEX idx_time_entries_user_task ON time_entries(user_id, task_id);
+CREATE INDEX idx_time_entries_user_task ON time_entries(user_id, task_id);
 ```
 
 ---
 
-## 🚀 WebSocket архитектура
+## 🚀 Рекомендации по Улучшению
+
+### FastAPI Лучшие Практики
+- **DI паттерны**: Автоматический commit/rollback в get_db()
+- **Async паттерны**: Правильное использование async/await
+- **Оптимизированные запросы**: selectinload для связанных данных
+
+### Тестирование
+- **Async тесты**: pytest-asyncio с правильной изоляцией
+- **Структура**: unit/integration/e2e разделение
+- **Database**: SQLite in-memory для тестов
+
+### Performance
+- **Redis кэширование**: 300s TTL для пользовательских данных
+- **Database оптимизации**: Эффективные запросы с selectinload
+- **Мониторинг**: Prometheus метрики для API и БД
+
+### WebSocket
+- **ConnectionManager**: Управление подключениями и комнатами
+- **Real-time обновления**: Для задач и уведомлений
+- **Broadcast**: Рассылка сообщений по комнатам
+
+### Frontend
+- **Component-based**: Переиспользуемые компоненты
+- **Responsive**: Mobile-first подход
+- **Accessibility**: ARIA labels и keyboard navigation
+
+### Метрики качества
+- **API Response Time** < 200ms
+- **Database Query Time** < 100ms
+- **Test Coverage** > 80%
+- **Frontend Load Time** < 2s
+- **WebSocket Latency** < 50ms
+
+---
+
+## 🔄 WebSocket архитектура
 
 ### Компоненты
 ```

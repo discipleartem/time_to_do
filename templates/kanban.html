@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Kanban доска{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        <li class="breadcrumb-item"><a href="/projects">Проекты</a></li>
+        <li class="breadcrumb-item active">{{ project.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Заголовок проекта -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    <i class="bi bi-kanban me-2"></i>
+                    {{ project.name }}
+                </h1>
+                <p class="text-muted mb-0">{{ project.description or 'Нет описания' }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#projectSettingsModal">
+                    <i class="bi bi-gear me-2"></i>
+                    Настройки
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Новая задача
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Фильтры и поиск -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchTasks" class="form-label">Поиск задач</label>
+                        <input type="text" class="form-control" id="searchTasks" placeholder="Найти задачу...">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filterAssignee" class="form-label">Исполнитель</label>
+                        <select class="form-select" id="filterAssignee">
+                            <option value="">Все исполнители</option>
+                            {% for member in project.members %}
+                            <option value="{{ member.id }}">{{ member.full_name or member.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filterPriority" class="form-label">Приоритет</label>
+                        <select class="form-select" id="filterPriority">
+                            <option value="">Все приоритеты</option>
+                            <option value="low">Низкий</option>
+                            <option value="medium">Средний</option>
+                            <option value="high">Высокий</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filterStatus" class="form-label">Статус</label>
+                        <select class="form-select" id="filterStatus">
+                            <option value="">Все статусы</option>
+                            <option value="todo">К выполнению</option>
+                            <option value="in_progress">В работе</option>
+                            <option value="review">На проверке</option>
+                            <option value="done">Выполнено</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button class="btn btn-outline-secondary" onclick="resetFilters()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Сбросить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kanban доска -->
+<div class="kanban-board">
+    <div class="row g-0">
+        <!-- Колонка "К выполнению" -->
+        <div class="col-md-3">
+            <div class="kanban-column" data-status="todo" data-project-id="{{ project.id }}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-circle me-2 text-secondary"></i>
+                        К выполнению
+                        <span class="badge bg-secondary ms-2" id="todoCount">0</span>
+                    </h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="quickCreateTask('todo')">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+                <div class="tasks-container" id="todoTasks">
+                    {% for task in tasks if task.status == 'todo' %}
+                    {% include 'partials/task_card.html' %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Колонка "В работе" -->
+        <div class="col-md-3">
+            <div class="kanban-column" data-status="in_progress" data-project-id="{{ project.id }}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-play-circle me-2 text-primary"></i>
+                        В работе
+                        <span class="badge bg-primary ms-2" id="inProgressCount">0</span>
+                    </h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="quickCreateTask('in_progress')">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+                <div class="tasks-container" id="inProgressTasks">
+                    {% for task in tasks if task.status == 'in_progress' %}
+                    {% include 'partials/task_card.html' %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Колонка "На проверке" -->
+        <div class="col-md-3">
+            <div class="kanban-column" data-status="review" data-project-id="{{ project.id }}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-eye me-2 text-warning"></i>
+                        На проверке
+                        <span class="badge bg-warning ms-2" id="reviewCount">0</span>
+                    </h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="quickCreateTask('review')">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+                <div class="tasks-container" id="reviewTasks">
+                    {% for task in tasks if task.status == 'review' %}
+                    {% include 'partials/task_card.html' %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Колонка "Выполнено" -->
+        <div class="col-md-3">
+            <div class="kanban-column" data-status="done" data-project-id="{{ project.id }}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-check-circle me-2 text-success"></i>
+                        Выполнено
+                        <span class="badge bg-success ms-2" id="doneCount">0</span>
+                    </h6>
+                </div>
+                <div class="tasks-container" id="doneTasks">
+                    {% for task in tasks if task.status == 'done' %}
+                    {% include 'partials/task_card.html' %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания задачи -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Создание задачи
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createTaskForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="taskTitle" class="form-label">Название задачи *</label>
+                                <input type="text" class="form-control" id="taskTitle" name="title" required
+                                       placeholder="Введите название задачи...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="taskPriority" class="form-label">Приоритет</label>
+                                <select class="form-select" id="taskPriority" name="priority">
+                                    <option value="low">Низкий</option>
+                                    <option value="medium" selected>Средний</option>
+                                    <option value="high">Высокий</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="taskDescription" name="description" rows="4"
+                                  placeholder="Подробное описание задачи..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="taskAssignee" class="form-label">Исполнитель</label>
+                                <select class="form-select" id="taskAssignee" name="assignee_id">
+                                    <option value="">Не назначен</option>
+                                    {% for member in project.members %}
+                                    <option value="{{ member.id }}">{{ member.full_name or member.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="taskStatus" class="form-label">Статус</label>
+                                <select class="form-select" id="taskStatus" name="status">
+                                    <option value="todo" selected>К выполнению</option>
+                                    <option value="in_progress">В работе</option>
+                                    <option value="review">На проверке</option>
+                                    <option value="done">Выполнено</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="taskStoryPoints" class="form-label">Story Points</label>
+                                <select class="form-select" id="taskStoryPoints" name="story_points">
+                                    <option value="">Не оценено</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="13">13</option>
+                                    <option value="21">21</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="taskDueDate" class="form-label">Срок выполнения</label>
+                                <input type="date" class="form-control" id="taskDueDate" name="due_date">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Теги -->
+                    <div class="mb-3">
+                        <label for="taskTags" class="form-label">Теги</label>
+                        <input type="text" class="form-control" id="taskTags" name="tags"
+                               placeholder="bug, feature, urgent (через запятую)">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Создать задачу
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно детальной информации о задаче -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskDetailTitle">Детали задачи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="taskDetailContent">
+                <!-- Контент загружается динамически -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Глобальные переменные
+let currentProjectId = '{{ project.id }}';
+
+// Инициализация счетчиков задач
+function updateTaskCounts() {
+    const statuses = ['todo', 'in_progress', 'review', 'done'];
+
+    statuses.forEach(status => {
+        const count = document.querySelectorAll(`[data-status="${status}"] .kanban-task`).length;
+        const countElement = document.getElementById(`${status.replace('_', '')}Count`);
+        if (countElement) {
+            countElement.textContent = count;
+        }
+    });
+}
+
+// Быстрое создание задачи
+function quickCreateTask(status) {
+    document.getElementById('taskStatus').value = status;
+    const modal = new bootstrap.Modal(document.getElementById('createTaskModal'));
+    modal.show();
+}
+
+// Сброс фильтров
+function resetFilters() {
+    document.getElementById('searchTasks').value = '';
+    document.getElementById('filterAssignee').value = '';
+    document.getElementById('filterPriority').value = '';
+    document.getElementById('filterStatus').value = '';
+    filterTasks();
+}
+
+// Фильтрация задач
+function filterTasks() {
+    const searchTerm = document.getElementById('searchTasks').value.toLowerCase();
+    const assigneeFilter = document.getElementById('filterAssignee').value;
+    const priorityFilter = document.getElementById('filterPriority').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+
+    const allTasks = document.querySelectorAll('.kanban-task');
+
+    allTasks.forEach(task => {
+        let visible = true;
+
+        // Поиск по названию
+        if (searchTerm && !task.textContent.toLowerCase().includes(searchTerm)) {
+            visible = false;
+        }
+
+        // Фильтр по исполнителю
+        if (assigneeFilter && task.dataset.assigneeId !== assigneeFilter) {
+            visible = false;
+        }
+
+        // Фильтр по приоритету
+        if (priorityFilter && task.dataset.priority !== priorityFilter) {
+            visible = false;
+        }
+
+        // Фильтр по статусу
+        if (statusFilter && task.dataset.status !== statusFilter) {
+            visible = false;
+        }
+
+        task.style.display = visible ? 'block' : 'none';
+    });
+}
+
+// Создание задачи
+document.getElementById('createTaskForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    // Обработка тегов
+    if (data.tags) {
+        data.tags = data.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    }
+
+    try {
+        const response = await fetch(`/api/v1/projects/${currentProjectId}/tasks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            const task = await response.json();
+
+            // Добавление задачи в соответствующую колонку
+            addTaskToBoard(task);
+
+            // Закрытие модального окна
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
+            modal.hide();
+
+            // Сброс формы
+            this.reset();
+
+            // Обновление счетчиков
+            updateTaskCounts();
+
+            // Показ уведомления
+            window.TimeToDO.showNotification({
+                type: 'success',
+                text: 'Задача успешно создана'
+            });
+        } else {
+            throw new Error('Ошибка при создании задачи');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        window.TimeToDO.showNotification({
+            type: 'error',
+            text: 'Не удалось создать задачу'
+        });
+    }
+});
+
+// Добавление задачи на доску
+function addTaskToBoard(task) {
+    const taskElement = createTaskElement(task);
+    const container = document.querySelector(`[data-status="${task.status}"] .tasks-container`);
+    if (container) {
+        container.appendChild(taskElement);
+        taskElement.classList.add('fade-in');
+    }
+}
+
+// Создание элемента задачи
+function createTaskElement(task) {
+    const div = document.createElement('div');
+    div.className = `card kanban-task priority-${task.priority}`;
+    div.dataset.taskId = task.id;
+    div.dataset.status = task.status;
+    div.dataset.priority = task.priority;
+    div.dataset.assigneeId = task.assignee_id || '';
+    div.draggable = true;
+
+    div.innerHTML = `
+        <div class="card-body p-3" onclick="showTaskDetail('${task.id}')">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-${getPriorityColor(task.priority)}">${getPriorityText(task.priority)}</span>
+                ${task.story_points ? `<span class="badge bg-info">${task.story_points}</span>` : ''}
+            </div>
+            <h6 class="card-title task-title">${task.title}</h6>
+            <p class="card-text text-muted small text-truncate-2">${task.description || ''}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    ${task.assignee ? `<img src="${task.assignee.avatar || '/static/images/default-avatar.png'}" class="avatar-sm me-1" title="${task.assignee.full_name || task.assignee.username}">` : ''}
+                    ${task.due_date ? `<small class="text-muted"><i class="bi bi-calendar me-1"></i>${formatDate(task.due_date)}</small>` : ''}
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); startTimer('${task.id}')" title="Запустить таймер">
+                        <i class="bi bi-play-fill"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); editTask('${task.id}')" title="Редактировать">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Добавление обработчиков drag and drop
+    div.addEventListener('dragstart', handleDragStart);
+    div.addEventListener('dragend', handleDragEnd);
+
+    return div;
+}
+
+// Получение цвета приоритета
+function getPriorityColor(priority) {
+    const colors = {
+        'low': 'success',
+        'medium': 'warning',
+        'high': 'danger'
+    };
+    return colors[priority] || 'secondary';
+}
+
+// Получение текста приоритета
+function getPriorityText(priority) {
+    const texts = {
+        'low': 'Низкий',
+        'medium': 'Средний',
+        'high': 'Высокий'
+    };
+    return texts[priority] || priority;
+}
+
+// Показать детальную информацию о задаче
+async function showTaskDetail(taskId) {
+    try {
+        const response = await fetch(`/api/v1/tasks/${taskId}`);
+        const task = await response.json();
+
+        document.getElementById('taskDetailTitle').textContent = task.title;
+
+        // Загрузка контента задачи
+        const content = await loadTaskDetailContent(task);
+        document.getElementById('taskDetailContent').innerHTML = content;
+
+        // Показ модального окна
+        const modal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Ошибка загрузки задачи:', error);
+        window.TimeToDO.showNotification({
+            type: 'error',
+            text: 'Не удалось загрузить информацию о задаче'
+        });
+    }
+}
+
+// Загрузка контента для детальной информации
+async function loadTaskDetailContent(task) {
+    return `
+        <div class="row">
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <h6>Описание</h6>
+                    <p>${task.description || 'Нет описания'}</p>
+                </div>
+
+                <!-- Комментарии -->
+                <div class="comments-section">
+                    <h6>Комментарии</h6>
+                    <div class="comments-container" data-task-id="${task.id}">
+                        <!-- Комментарии загружаются динамически -->
+                    </div>
+                    <div class="mt-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Добавить комментарий..." id="commentInput">
+                            <button class="btn btn-primary" onclick="addComment('${task.id}')">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Информация о задаче -->
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Информация о задаче</h6>
+                        <div class="mb-2">
+                            <strong>Статус:</strong> <span class="badge bg-${getStatusColor(task.status)}">${getStatusText(task.status)}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Приоритет:</strong> <span class="badge bg-${getPriorityColor(task.priority)}">${getPriorityText(task.priority)}</span>
+                        </div>
+                        ${task.story_points ? `<div class="mb-2"><strong>Story Points:</strong> ${task.story_points}</div>` : ''}
+                        ${task.assignee ? `<div class="mb-2"><strong>Исполнитель:</strong> ${task.assignee.full_name || task.assignee.username}</div>` : ''}
+                        ${task.due_date ? `<div class="mb-2"><strong>Срок:</strong> ${formatDate(task.due_date)}</div>` : ''}
+                        <div class="mb-2">
+                            <strong>Создана:</strong> ${formatDate(task.created_at)}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Обновлена:</strong> ${formatDate(task.updated_at)}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таймер -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Таймер</h6>
+                        <div class="timer-display text-center mb-3" data-task-id="${task.id}">00:00:00</div>
+                        <div class="timer-controls d-grid gap-2">
+                            <button class="btn btn-success" onclick="startTimer('${task.id}')">
+                                <i class="bi bi-play-fill me-2"></i>Старт
+                            </button>
+                            <button class="btn btn-warning" onclick="pauseTimer('${task.id}')">
+                                <i class="bi bi-pause-fill me-2"></i>Пауза
+                            </button>
+                            <button class="btn btn-danger" onclick="stopTimer('${task.id}')">
+                                <i class="bi bi-stop-fill me-2"></i>Стоп
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    updateTaskCounts();
+
+    // Добавление обработчиков для фильтров
+    ['searchTasks', 'filterAssignee', 'filterPriority', 'filterStatus'].forEach(id => {
+        document.getElementById(id).addEventListener('input', filterTasks);
+        document.getElementById(id).addEventListener('change', filterTasks);
+    });
+});
+</script>
+{% endblock %}
