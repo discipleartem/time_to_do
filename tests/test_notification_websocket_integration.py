@@ -202,29 +202,27 @@ class TestNotificationWebSocketIntegration:
             mock_connection2,
         ]
 
+        # Мокаем broadcast_to_all как async функцию
+        mock_manager.broadcast_to_all = AsyncMock()
+
         integration = NotificationWebSocketIntegration()
 
-        with patch.object(
-            integration.websocket_handler, "send_notification", new_callable=AsyncMock
-        ) as mock_send:
-            await integration.send_system_notification(
-                title="System Notification", message="System message"
-            )
+        # Заменяем websocket_handler на мок
+        integration.websocket_handler = AsyncMock()
 
-            # Проверяем, что уведомление отправлено обоим пользователям
-            assert mock_send.call_count == 2
-            mock_send.assert_any_call(
-                user_id=user1_id,
-                title="System Notification",
-                message="System message",
-                notification_type="system",
-            )
-            mock_send.assert_any_call(
-                user_id=user2_id,
-                title="System Notification",
-                message="System message",
-                notification_type="system",
-            )
+        await integration.send_system_notification(
+            title="System Notification", message="System message"
+        )
+
+        # Проверяем, что broadcast_to_all был вызван (для отправки всем)
+        mock_manager.broadcast_to_all.assert_called_once_with(
+            {
+                "type": "notification",
+                "title": "System Notification",
+                "message": "System message",
+                "notification_type": "system",
+            }
+        )
 
     @patch("app.services.notification_websocket_integration.manager")
     async def test_send_system_notification_specific_users(self, mock_manager):

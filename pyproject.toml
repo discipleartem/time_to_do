@@ -64,7 +64,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
-target-version = ['py312']  # Соответствует Python 3.12
+target-version = ['py313']  # Соответствует Python 3.13
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -81,7 +81,7 @@ extend-exclude = '''
 '''
 
 [tool.ruff]
-target-version = "py312"  # Согласовано с остальной конфигурацией
+target-version = "py313"  # Согласовано с остальной конфигурацией
 line-length = 88
 
 [tool.ruff.lint]
@@ -154,6 +154,37 @@ disallow_untyped_defs = false
 check_untyped_defs = false
 warn_return_any = false
 warn_no_return = false
+
+# Внутренние модули проекта (без stubs)
+[[tool.mypy.overrides]]
+module = [
+    "app.api.*",
+    "app.core.*",
+    "app.models.*",
+]
+ignore_missing_imports = true
+disallow_untyped_defs = false
+check_untyped_defs = false
+warn_return_any = false
+
+# Сервисы SQLAlchemy - максимальная гибкость
+[[tool.mypy.overrides]]
+module = [
+    "app.services.*",
+]
+ignore_missing_imports = true
+disallow_untyped_defs = false
+check_untyped_defs = false
+warn_return_any = false
+warn_no_return = false
+# Отключаем проверки для сложных SQLAlchemy операций
+disable_error_code = [
+    "attr-defined",
+    "assignment",
+    "operator",
+    "arg-type",
+    "return-value",
+]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

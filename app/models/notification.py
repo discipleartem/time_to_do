@@ -3,17 +3,9 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    String,
-    Text,
-    Uuid,
-    func,
-)
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
 
@@ -24,75 +16,108 @@ class Notification(BaseModel):
     __tablename__ = "notifications"
 
     # Поля модели
-    user_id: UUID = Column(  # type: ignore[assignment]
-        Uuid(as_uuid=True),
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
+        comment="ID пользователя",
     )
-    title: str = Column(String(255), nullable=False)  # type: ignore[assignment]
-    message: str = Column(Text, nullable=False)  # type: ignore[assignment]
-    notification_type: str = Column(String(50), nullable=False, index=True)  # type: ignore[assignment]
+
+    title: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="Заголовок уведомления",
+    )
+
+    message: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        comment="Сообщение уведомления",
+    )
+
+    notification_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+        comment="Тип уведомления",
+    )
 
     # Статус и метаданные
-    is_read: bool = Column(Boolean, default=False, nullable=False, index=True)  # type: ignore[assignment]
-    read_at: datetime | None = Column(DateTime(timezone=True))  # type: ignore[assignment]
+    is_read: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True,
+        comment="Прочитано ли уведомление",
+    )
+
+    read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Время прочтения",
+    )
 
     # Связанные сущности
-    project_id: UUID | None = Column(  # type: ignore[assignment]
-        Uuid(as_uuid=True),
+    project_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
+        comment="ID проекта",
     )
-    task_id: UUID | None = Column(  # type: ignore[assignment]
-        Uuid(as_uuid=True),
+
+    task_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("tasks.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
+        comment="ID задачи",
     )
-    sprint_id: UUID | None = Column(  # type: ignore[assignment]
-        Uuid(as_uuid=True),
+
+    sprint_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("sprints.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
+        comment="ID спринта",
     )
 
     # Автор уведомления
-    sender_id: UUID | None = Column(  # type: ignore[assignment]
-        Uuid(as_uuid=True),
+    sender_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+        comment="ID отправителя",
     )
 
     # URL для перехода по клику на уведомление
-    action_url: str | None = Column(String(500))  # type: ignore[assignment]
+    action_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="URL для действия",
+    )
 
     # Метаданные для расширения функциональности
-    metadata_json: str | None = Column(Text)  # type: ignore[assignment]
-
-    # Временные метки
-    created_at: datetime = Column(  # type: ignore[assignment]
-        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
-    )
-    updated_at: datetime = Column(  # type: ignore[assignment]
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
+    metadata_json: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Метаданные в JSON",
     )
 
     # Отношения
-    user = relationship(
-        "User", foreign_keys="notifications.user_id", back_populates="notifications"
-    )
+    user = relationship("User", foreign_keys=[user_id], back_populates="notifications")
+
     project = relationship("Project", back_populates="notifications")
+
     task = relationship("Task", back_populates="notifications")
+
     sprint = relationship("Sprint", back_populates="notifications")
+
     sender = relationship(
         "User",
-        foreign_keys="notifications.sender_id",
+        foreign_keys=[sender_id],
         back_populates="sent_notifications",
     )
 

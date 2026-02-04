@@ -94,8 +94,16 @@ async def db_session():
 def override_get_db(db_session: AsyncSession):
     """Переопределение зависимости get_db для тестов"""
 
-    def _override_get_db():
-        return db_session
+    async def _override_get_db():
+        print("DEBUG: Using test database session!")
+        try:
+            yield db_session
+            await db_session.commit()
+        except Exception:
+            await db_session.rollback()
+            raise
+        finally:
+            await db_session.close()
 
     return _override_get_db
 
@@ -139,6 +147,12 @@ async def auth_headers(db_session: AsyncSession):
             raise
 
     return {"Authorization": f"Bearer {access_token}", "access_token": access_token}
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_user_token(auth_headers):
+    """Fixture для получения токена пользователя"""
+    return auth_headers["access_token"]
 
 
 @pytest_asyncio.fixture

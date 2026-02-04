@@ -2,53 +2,96 @@
   "mcpServers": {
     "filesystem": {
       "command": "npx",
-      "args": ["@modelcontextprotocol/server-filesystem", "/home/tomas/WORK/task_to_do"],
-      "description": "File system access for Time to DO project"
+      "args": [
+        "@modelcontextprotocol/server-filesystem",
+        "/home/tomas/WORK/task_to_do"
+      ],
+      "description": "File system access for Time to DO project",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "git": {
       "command": "npx",
-      "args": ["@cyanheads/git-mcp-server", "/home/tomas/WORK/task_to_do"],
-      "description": "Git repository access for version control"
+      "args": [
+        "@cyanheads/git-mcp-server",
+        "/home/tomas/WORK/task_to_do"
+      ],
+      "description": "Git repository access for version control",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp"],
-      "description": "Browser automation and UI testing"
+      "args": [
+        "@playwright/mcp"
+      ],
+      "description": "Browser automation and UI testing",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "chrome-devtools": {
       "command": "npx",
-      "args": ["chrome-devtools-mcp"],
-      "description": "Chrome DevTools for debugging"
+      "args": [
+        "chrome-devtools-mcp"
+      ],
+      "description": "Chrome DevTools for debugging",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "code-runner": {
       "command": "npx",
-      "args": ["mcp-server-code-runner"],
-      "description": "Code execution in multiple languages"
+      "args": [
+        "mcp-server-code-runner"
+      ],
+      "description": "Code execution in multiple languages",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "context7": {
       "command": "npx",
-      "args": ["@upstash/context7-mcp"],
-      "description": "Context management and documentation"
+      "args": [
+        "@upstash/context7-mcp"
+      ],
+      "description": "Context management and documentation",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "memory": {
       "command": "npx",
-      "args": ["@modelcontextprotocol/server-memory"],
-      "description": "Session memory management"
+      "args": [
+        "@modelcontextprotocol/server-memory"
+      ],
+      "description": "Session memory management",
+      "env": {
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
+      }
     },
     "apify": {
       "command": "npx",
-      "args": ["@apify/actors-mcp-server"],
+      "args": [
+        "@apify/actors-mcp-server"
+      ],
       "description": "Web scraping and automation",
       "env": {
-        "APIFY_TOKEN": "${APIFY_TOKEN}"
+        "APIFY_TOKEN": "${APIFY_TOKEN}",
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
       }
     },
     "notion": {
       "command": "npx",
-      "args": ["@notionhq/notion-mcp-server"],
+      "args": [
+        "@notionhq/notion-mcp-server"
+      ],
       "description": "Notion integration for documentation",
       "env": {
-        "NOTION_API_KEY": "${NOTION_API_KEY}"
+        "NOTION_API_KEY": "${NOTION_API_KEY}",
+        "PATH": "/home/tomas/.local/bin:/home/tomas/WORK/task_to_do/.venv/bin:${env:PATH}"
       }
     }
   },

@@ -41,9 +41,14 @@ class AuthService:
         Raises:
             HTTPException: Если пользователь уже существует
         """
+        print(f"DEBUG: Registering user {user_data.email}")
+
         # Проверяем, существует ли пользователь
+        print("DEBUG: Checking if user exists...")
         existing_user = await self.get_user_by_email(user_data.email)
+        print(f"DEBUG: User exists check complete: {existing_user is not None}")
         if existing_user:
+            print(f"DEBUG: User {user_data.email} already exists")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Пользователь с таким email уже существует",
@@ -52,10 +57,13 @@ class AuthService:
         if user_data.username:
             existing_username = await self.get_user_by_username(user_data.username)
             if existing_username:
+                print(f"DEBUG: Username {user_data.username} already exists")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Пользователь с таким именем уже существует",
                 )
+
+        print(f"DEBUG: Creating new user {user_data.email}")
 
         # Создаем нового пользователя
         user_create = UserCreate(
@@ -72,6 +80,7 @@ class AuthService:
         if user_data.role and user_data.role == "ADMIN":
             user_role = UserRole.ADMIN
 
+        print("DEBUG: Creating User object")
         db_user = User(
             email=user_create.email,
             username=user_create.username,
@@ -82,14 +91,21 @@ class AuthService:
             role=user_role,
         )
 
+        print("DEBUG: Adding user to session")
         self.db.add(db_user)
+
+        print("DEBUG: Committing to database")
         await self.db.commit()
         await self.db.refresh(db_user)
 
+        print(f"DEBUG: User created with ID {db_user.id}")
+
         # Создаем токены
+        print("DEBUG: Creating tokens")
         access_token = create_access_token(subject=db_user.email)
         refresh_token = create_refresh_token(subject=db_user.email)
 
+        print("DEBUG: Registration complete")
         return db_user, access_token, refresh_token
 
     async def login(self, login_data: LoginRequest) -> tuple[User, str, str]:
@@ -240,8 +256,22 @@ class AuthService:
 
     async def get_user_by_email(self, email: str) -> User | None:
         """Получение пользователя по email"""
-        result = await self.db.execute(select(User).where(User.email == email))
-        return result.scalar_one_or_none()
+        print(f"DEBUG: get_user_by_email called with {email}")
+        try:
+            print("DEBUG: Creating select statement")
+            stmt = select(User).where(User.email == email)
+            print("DEBUG: Executing query")
+            result = await self.db.execute(stmt)
+            print("DEBUG: Getting scalar result")
+            user = result.scalar_one_or_none()
+            print(f"DEBUG: User query result: {user}")
+            return user
+        except Exception as e:
+            print(f"DEBUG: Error in get_user_by_email: {e}")
+            import traceback
+
+            traceback.print_exc()
+            raise
 
     async def get_user_by_username(self, username: str) -> User | None:
         """Получение пользователя по имени"""

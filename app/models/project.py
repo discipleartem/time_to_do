@@ -201,7 +201,7 @@ class ProjectMember(BaseModel):
 
     invited_by = relationship(
         "User",
-        foreign_keys=[invited_by_id],
+        foreign_keys="ProjectMember.invited_by_id",
     )
 
     # Properties с правильной типизацией для mypy

@@ -123,14 +123,14 @@ class User(BaseModel):
 
     assigned_tasks = relationship(
         "Task",
-        foreign_keys="Task.assignee_id",
         back_populates="assignee",
+        foreign_keys="Task.assignee_id",
     )
 
     created_tasks = relationship(
         "Task",
-        foreign_keys="Task.creator_id",
         back_populates="creator",
+        foreign_keys="Task.creator_id",
     )
 
     comments = relationship(
@@ -142,6 +142,26 @@ class User(BaseModel):
     created_share_links = relationship(
         "ShareLink",
         back_populates="creator",
+        cascade="all, delete-orphan",
+    )
+
+    saved_searches = relationship(
+        "SavedSearch",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    notifications = relationship(
+        "Notification",
+        foreign_keys="Notification.user_id",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    sent_notifications = relationship(
+        "Notification",
+        foreign_keys="Notification.sender_id",
+        back_populates="sender",
         cascade="all, delete-orphan",
     )
 

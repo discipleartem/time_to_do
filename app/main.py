@@ -194,6 +194,18 @@ async def notifications_page(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request) -> HTMLResponse:
+    """
+    Страница поиска
+    """
+    return templates.TemplateResponse(
+        request,
+        "search.html",
+        {"settings": settings},
+    )
+
+
 # Exception handlers
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(

@@ -1,0 +1,830 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.search-form {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.search-input-group {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    transition: border-color 0.3s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #0d6efd;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.search-btn:hover {
+    background: #0b5ed7;
+}
+
+.search-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.filter-select {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: white;
+}
+
+.search-results {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.search-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.search-stats {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.result-item {
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.result-item:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.result-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.result-type {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.type-task {
+    background: #d4edda;
+    color: #155724;
+}
+
+.type-project {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.type-sprint {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.type-comment {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.result-content {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.result-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rank-badge {
+    background: #e9ecef;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.no-results-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.saved-searches {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.saved-searches-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.saved-search-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.saved-search-item:hover {
+    background: #e9ecef;
+}
+
+.saved-search-name {
+    font-weight: 500;
+}
+
+.saved-search-query {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ced4da;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #e9ecef;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn.active {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        padding: 1rem;
+    }
+
+    .search-form {
+        padding: 1.5rem;
+    }
+
+    .search-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .result-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .result-meta {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <h1 class="text-center mb-4">Поиск</h1>
+
+    <!-- Форма поиска -->
+    <div class="search-form">
+        <form id="searchForm">
+            <div class="search-input-group">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="Введите поисковый запрос..."
+                    value="{{ query or '' }}"
+                    required
+                >
+                <button type="submit" class="search-btn">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+
+            <div class="search-filters">
+                <div class="filter-group">
+                    <label class="filter-label">Типы сущностей</label>
+                    <select id="entityTypes" class="filter-select" multiple>
+                        <option value="task" {% if 'task' in (entity_types or []) %}selected{% endif %}>Задачи</option>
+                        <option value="project" {% if 'project' in (entity_types or []) %}selected{% endif %}>Проекты</option>
+                        <option value="sprint" {% if 'sprint' in (entity_types or []) %}selected{% endif %}>Спринты</option>
+                        <option value="comment" {% if 'comment' in (entity_types or []) %}selected{% endif %}>Комментарии</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Лимит результатов</label>
+                    <select id="limit" class="filter-select">
+                        <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+                        <option value="20" {% if limit == 20 or not limit %}selected{% endif %}>20</option>
+                        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Включать публичные</label>
+                    <select id="includePublic" class="filter-select">
+                        <option value="true" {% if include_public != false %}selected{% endif %}>Да</option>
+                        <option value="false" {% if include_public == false %}selected{% endif %}>Нет</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Сохраненные поиски -->
+    <div id="savedSearches" class="saved-searches" style="display: none;">
+        <div class="saved-searches-title">Сохраненные поиски</div>
+        <div id="savedSearchesList"></div>
+    </div>
+
+    <!-- Результаты поиска -->
+    <div class="search-results">
+        <div class="search-header">
+            <h2>Результаты поиска</h2>
+            <div class="search-stats" id="searchStats"></div>
+        </div>
+
+        <div id="searchResults">
+            <div class="loading">
+                <i class="bi bi-hourglass-split"></i>
+                <p>Введите поисковый запрос для начала поиска...</p>
+            </div>
+        </div>
+
+        <div id="pagination" class="pagination" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- Модальное окно сохранения поиска -->
+<div class="modal fade" id="saveSearchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Сохранить поиск</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="saveSearchForm">
+                    <div class="mb-3">
+                        <label for="searchName" class="form-label">Название поиска</label>
+                        <input type="text" class="form-control" id="searchName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="searchIsPublic" class="form-label">Публичный поиск</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="searchIsPublic">
+                            <label class="form-check-label" for="searchIsPublic">
+                                Сделать поиск доступным для всех пользователей
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveSearchBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class SearchManager {
+    constructor() {
+        this.currentQuery = '';
+        this.currentPage = 0;
+        this.totalCount = 0;
+        this.currentLimit = 20;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadSavedSearches();
+
+        // Загружаем результаты из URL параметров
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        if (query) {
+            document.getElementById('searchInput').value = query;
+            this.performSearch();
+        }
+    }
+
+    bindEvents() {
+        // Форма поиска
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.currentPage = 0;
+            this.performSearch();
+        });
+
+        // Сохранение поиска
+        document.getElementById('saveSearchBtn').addEventListener('click', () => {
+            this.saveCurrentSearch();
+        });
+
+        // Real-time поиск с debounce
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (e.target.value.length >= 3) {
+                    this.currentPage = 0;
+                    this.performSearch();
+                }
+            }, 500);
+        });
+    }
+
+    async performSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) return;
+
+        this.currentQuery = query;
+        this.updateURL();
+
+        const entityTypes = Array.from(document.getElementById('entityTypes').selectedOptions)
+            .map(option => option.value);
+        const limit = parseInt(document.getElementById('limit').value);
+        const includePublic = document.getElementById('includePublic').value === 'true';
+
+        this.showLoading();
+
+        try {
+            const response = await fetch(`/api/v1/search/search`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    entity_types: entityTypes.length > 0 ? entityTypes : null,
+                    limit: limit,
+                    offset: this.currentPage * limit,
+                    include_public: includePublic,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при выполнении поиска');
+            }
+
+            const data = await response.json();
+            this.displayResults(data);
+            this.totalCount = data.total_count;
+            this.currentLimit = limit;
+            this.updatePagination();
+
+        } catch (error) {
+            console.error('Search error:', error);
+            this.showError('Произошла ошибка при поиске. Попробуйте еще раз.');
+        }
+    }
+
+    displayResults(data) {
+        const resultsContainer = document.getElementById('searchResults');
+        const statsContainer = document.getElementById('searchStats');
+
+        if (data.results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <h3>Ничего не найдено</h3>
+                    <p>Попробуйте изменить поисковый запрос или фильтры</p>
+                </div>
+            `;
+            statsContainer.textContent = `Найдено: 0 результатов`;
+            return;
+        }
+
+        const resultsHTML = data.results.map(result => this.renderResult(result)).join('');
+        resultsContainer.innerHTML = resultsHTML;
+
+        statsContainer.textContent = `Найдено: ${data.total_count} результатов (показано ${data.results.length})`;
+
+        // Добавляем обработчики кликов на результаты
+        resultsContainer.querySelectorAll('.result-item').forEach((item, index) => {
+            item.addEventListener('click', () => {
+                this.navigateToResult(data.results[index]);
+            });
+        });
+    }
+
+    renderResult(result) {
+        const typeClass = `type-${result.entity_type}`;
+        const rankPercentage = Math.round(result.rank * 100);
+
+        return `
+            <div class="result-item">
+                <div class="result-header">
+                    <h3 class="result-title">${this.escapeHtml(result.title)}</h3>
+                    <div>
+                        <span class="result-type ${typeClass}">${this.getEntityTypeLabel(result.entity_type)}</span>
+                        <span class="rank-badge">${rankPercentage}%</span>
+                    </div>
+                </div>
+
+                ${result.content ? `<div class="result-content">${this.escapeHtml(result.content)}</div>` : ''}
+
+                <div class="result-meta">
+                    ${result.entity_data ? this.renderEntityMeta(result.entity_data, result.entity_type) : ''}
+                    <div class="meta-item">
+                        <i class="bi bi-clock"></i>
+                        <span>${new Date(result.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderEntityMeta(entityData, entityType) {
+        switch (entityType) {
+            case 'task':
+                return `
+                    ${entityData.status ? `<div class="meta-item"><span class="badge bg-secondary">${entityData.status}</span></div>` : ''}
+                    ${entityData.priority ? `<div class="meta-item"><span class="badge bg-primary">${entityData.priority}</span></div>` : ''}
+                    ${entityData.project_name ? `<div class="meta-item"><i class="bi bi-folder"></i> ${entityData.project_name}</div>` : ''}
+                    ${entityData.assignee_name ? `<div class="meta-item"><i class="bi bi-person"></i> ${entityData.assignee_name}</div>` : ''}
+                `;
+            case 'project':
+                return `
+                    ${entityData.status ? `<div class="meta-item"><span class="badge bg-secondary">${entityData.status}</span></div>` : ''}
+                    ${entityData.member_count ? `<div class="meta-item"><i class="bi bi-people"></i> ${entityData.member_count} участников</div>` : ''}
+                    ${entityData.owner_name ? `<div class="meta-item"><i class="bi bi-person"></i> ${entityData.owner_name}</div>` : ''}
+                `;
+            case 'sprint':
+                return `
+                    ${entityData.status ? `<div class="meta-item"><span class="badge bg-warning">${entityData.status}</span></div>` : ''}
+                    ${entityData.project_name ? `<div class="meta-item"><i class="bi bi-folder"></i> ${entityData.project_name}</div>` : ''}
+                    ${entityData.task_count ? `<div class="meta-item"><i class="bi bi-list-check"></i> ${entityData.task_count}/${entityData.completed_task_count} задач</div>` : ''}
+                `;
+            case 'comment':
+                return `
+                    ${entityData.task_title ? `<div class="meta-item"><i class="bi bi-chat"></i> ${entityData.task_title}</div>` : ''}
+                    ${entityData.author_name ? `<div class="meta-item"><i class="bi bi-person"></i> ${entityData.author_name}</div>` : ''}
+                    ${entityData.is_edited ? '<div class="meta-item"><i class="bi bi-pencil"></i> отредактирован</div>' : ''}
+                `;
+            default:
+                return '';
+        }
+    }
+
+    getEntityTypeLabel(type) {
+        const labels = {
+            task: 'Задача',
+            project: 'Проект',
+            sprint: 'Спринт',
+            comment: 'Комментарий',
+        };
+        return labels[type] || type;
+    }
+
+    navigateToResult(result) {
+        let url;
+        switch (result.entity_type) {
+            case 'task':
+                url = `/projects/${result.entity_data?.project_id || '#'}`;
+                break;
+            case 'project':
+                url = `/projects/${result.entity_id}`;
+                break;
+            case 'sprint':
+                url = `/sprints/${result.entity_id}`;
+                break;
+            case 'comment':
+                url = `/projects/${result.entity_data?.project_id || '#'}`;
+                break;
+            default:
+                return;
+        }
+        window.location.href = url;
+    }
+
+    updatePagination() {
+        const paginationContainer = document.getElementById('pagination');
+        const totalPages = Math.ceil(this.totalCount / this.currentLimit);
+
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+
+        let paginationHTML = '';
+
+        // Кнопка "Назад"
+        paginationHTML += `
+            <button class="pagination-btn" ${this.currentPage === 0 ? 'disabled' : ''}
+                    onclick="searchManager.goToPage(${this.currentPage - 1})">
+                Назад
+            </button>
+        `;
+
+        // Номера страниц
+        const startPage = Math.max(0, this.currentPage - 2);
+        const endPage = Math.min(totalPages - 1, this.currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <button class="pagination-btn ${i === this.currentPage ? 'active' : ''}"
+                        onclick="searchManager.goToPage(${i})">
+                    ${i + 1}
+                </button>
+            `;
+        }
+
+        // Кнопка "Вперед"
+        paginationHTML += `
+            <button class="pagination-btn" ${this.currentPage >= totalPages - 1 ? 'disabled' : ''}
+                    onclick="searchManager.goToPage(${this.currentPage + 1})">
+                Вперед
+            </button>
+        `;
+
+        paginationContainer.innerHTML = paginationHTML;
+    }
+
+    goToPage(page) {
+        this.currentPage = page;
+        this.performSearch();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async loadSavedSearches() {
+        try {
+            const response = await fetch('/api/v1/search/saved-searches');
+            if (!response.ok) return;
+
+            const savedSearches = await response.json();
+            this.displaySavedSearches(savedSearches);
+        } catch (error) {
+            console.error('Error loading saved searches:', error);
+        }
+    }
+
+    displaySavedSearches(savedSearches) {
+        const container = document.getElementById('savedSearches');
+        const listContainer = document.getElementById('savedSearchesList');
+
+        if (savedSearches.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        const searchesHTML = savedSearches.map(search => `
+            <div class="saved-search-item" onclick="searchManager.applySavedSearch('${search.query}', ${JSON.stringify(search.filters).replace(/"/g, '&quot;')})">
+                <div>
+                    <div class="saved-search-name">${this.escapeHtml(search.name)}</div>
+                    <div class="saved-search-query">${this.escapeHtml(search.query)}</div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); searchManager.deleteSavedSearch('${search.id}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `).join('');
+
+        listContainer.innerHTML = searchesHTML;
+    }
+
+    applySavedSearch(query, filters) {
+        document.getElementById('searchInput').value = query;
+
+        if (filters) {
+            // Применяем фильтры из сохраненного поиска
+            if (filters.entity_types) {
+                const entityTypesSelect = document.getElementById('entityTypes');
+                Array.from(entityTypesSelect.options).forEach(option => {
+                    option.selected = filters.entity_types.includes(option.value);
+                });
+            }
+
+            if (filters.limit) {
+                document.getElementById('limit').value = filters.limit;
+            }
+
+            if (filters.include_public !== undefined) {
+                document.getElementById('includePublic').value = filters.include_public.toString();
+            }
+        }
+
+        this.currentPage = 0;
+        this.performSearch();
+    }
+
+    async saveCurrentSearch() {
+        const name = document.getElementById('searchName').value.trim();
+        if (!name) return;
+
+        const isPublic = document.getElementById('searchIsPublic').checked;
+
+        try {
+            const response = await fetch('/api/v1/search/saved-searches', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    query: this.currentQuery,
+                    filters: {
+                        entity_types: Array.from(document.getElementById('entityTypes').selectedOptions)
+                            .map(option => option.value),
+                        limit: this.currentLimit,
+                        include_public: document.getElementById('includePublic').value === 'true',
+                    },
+                    is_public: isPublic,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при сохранении поиска');
+            }
+
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('saveSearchModal'));
+            modal.hide();
+
+            // Очищаем форму
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchIsPublic').checked = false;
+
+            // Перезагружаем сохраненные поиски
+            await this.loadSavedSearches();
+
+        } catch (error) {
+            console.error('Error saving search:', error);
+            alert('Произошла ошибка при сохранении поиска');
+        }
+    }
+
+    showLoading() {
+        document.getElementById('searchResults').innerHTML = `
+            <div class="loading">
+                <i class="bi bi-hourglass-split"></i>
+                <p>Выполняется поиск...</p>
+            </div>
+        `;
+    }
+
+    showError(message) {
+        document.getElementById('searchResults').innerHTML = `
+            <div class="no-results">
+                <div class="no-results-icon">⚠️</div>
+                <h3>Ошибка</h3>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    updateURL() {
+        const params = new URLSearchParams();
+        params.set('q', this.currentQuery);
+
+        const entityTypes = Array.from(document.getElementById('entityTypes').selectedOptions)
+            .map(option => option.value);
+        if (entityTypes.length > 0) {
+            params.set('type', entityTypes.join(','));
+        }
+
+        params.set('limit', this.currentLimit);
+        params.set('offset', this.currentPage * this.currentLimit);
+        params.set('public', document.getElementById('includePublic').value);
+
+        const newURL = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, '', newURL);
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Инициализация
+const searchManager = new SearchManager();
+</script>
+{% endblock %}
