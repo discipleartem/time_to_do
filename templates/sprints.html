@@ -95,7 +95,8 @@
                     </div>
                     <div class="mb-3">
                         <label for="sprintGoal" class="form-label">Цель спринта</label>
-                        <input type="text" class="form-control" id="sprintGoal" placeholder="Что мы хотим достичь в этом спринте?">
+                        <input type="text" class="form-control" id="sprintGoal"
+                            placeholder="Что мы хотим достичь в этом спринте?">
                     </div>
                     <div class="row">
                         <div class="col-md-6">
@@ -192,7 +193,7 @@
                     <div class="mb-3">
                         <label for="retrospectiveNotes" class="form-label">Заметки ретроспективы</label>
                         <textarea class="form-control" id="retrospectiveNotes" rows="4"
-                                  placeholder="Что прошло хорошо? Что можно улучшить?"></textarea>
+                            placeholder="Что прошло хорошо? Что можно улучшить?"></textarea>
                     </div>
                     <input type="hidden" id="completeSprintId">
                 </form>
@@ -210,95 +211,95 @@
 
 {% block extra_js %}
 <script>
-let currentProjectId = null;
-let sprints = [];
+    let currentProjectId = null;
+    let sprints = [];
 
-// Загрузка при инициализации
-document.addEventListener('DOMContentLoaded', function() {
-    loadProjects();
-});
+    // Загрузка при инициализации
+    document.addEventListener('DOMContentLoaded', function () {
+        loadProjects();
+    });
 
-// Загрузка проектов
-async function loadProjects() {
-    try {
-        const response = await fetch('/api/v1/projects');
-        const projects = await response.json();
+    // Загрузка проектов
+    async function loadProjects() {
+        try {
+            const response = await fetch('/api/v1/projects');
+            const projects = await response.json();
 
-        const select = document.getElementById('projectSelect');
-        select.innerHTML = '<option value="">Выберите проект...</option>';
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '<option value="">Выберите проект...</option>';
 
-        projects.forEach(project => {
-            const option = document.createElement('option');
-            option.value = project.id;
-            option.textContent = project.name;
-            select.appendChild(option);
-        });
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.name;
+                select.appendChild(option);
+            });
 
-        // Выбираем первый проект если есть
-        if (projects.length > 0) {
-            select.value = projects[0].id;
-            currentProjectId = projects[0].id;
-            loadSprints();
+            // Выбираем первый проект если есть
+            if (projects.length > 0) {
+                select.value = projects[0].id;
+                currentProjectId = projects[0].id;
+                loadSprints();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки проектов:', error);
+            showError('Не удалось загрузить проекты');
         }
-    } catch (error) {
-        console.error('Ошибка загрузки проектов:', error);
-        showError('Не удалось загрузить проекты');
-    }
-}
-
-// Загрузка спринтов
-async function loadSprints() {
-    const projectId = document.getElementById('projectSelect').value;
-    const showCompleted = document.getElementById('showCompleted').checked;
-
-    if (!projectId) {
-        document.getElementById('sprintsContainer').innerHTML =
-            '<div class="alert alert-info">Выберите проект для просмотра спринтов</div>';
-        return;
     }
 
-    currentProjectId = projectId;
+    // Загрузка спринтов
+    async function loadSprints() {
+        const projectId = document.getElementById('projectSelect').value;
+        const showCompleted = document.getElementById('showCompleted').checked;
 
-    try {
-        // Загрузка активного спринта
-        loadActiveSprint(projectId);
+        if (!projectId) {
+            document.getElementById('sprintsContainer').innerHTML =
+                '<div class="alert alert-info">Выберите проект для просмотра спринтов</div>';
+            return;
+        }
 
-        // Загрузка всех спринтов
-        const response = await fetch(`/api/v1/sprints/project/${projectId}?include_completed=${showCompleted}`);
-        sprints = await response.json();
+        currentProjectId = projectId;
 
-        renderSprints();
-    } catch (error) {
-        console.error('Ошибка загрузки спринтов:', error);
-        showError('Не удалось загрузить спринты');
+        try {
+            // Загрузка активного спринта
+            loadActiveSprint(projectId);
+
+            // Загрузка всех спринтов
+            const response = await fetch(`/api/v1/sprints/project/${projectId}?include_completed=${showCompleted}`);
+            sprints = await response.json();
+
+            renderSprints();
+        } catch (error) {
+            console.error('Ошибка загрузки спринтов:', error);
+            showError('Не удалось загрузить спринты');
+        }
     }
-}
 
-// Загрузка активного спринта
-async function loadActiveSprint(projectId) {
-    try {
-        const response = await fetch(`/api/v1/sprints/project/${projectId}/active`);
-        const data = await response.json();
+    // Загрузка активного спринта
+    async function loadActiveSprint(projectId) {
+        try {
+            const response = await fetch(`/api/v1/sprints/project/${projectId}/active`);
+            const data = await response.json();
 
-        if (data.message) {
+            if (data.message) {
+                document.getElementById('activeSprintContainer').style.display = 'none';
+            } else {
+                renderActiveSprint(data);
+                document.getElementById('activeSprintContainer').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки активного спринта:', error);
             document.getElementById('activeSprintContainer').style.display = 'none';
-        } else {
-            renderActiveSprint(data);
-            document.getElementById('activeSprintContainer').style.display = 'block';
         }
-    } catch (error) {
-        console.error('Ошибка загрузки активного спринта:', error);
-        document.getElementById('activeSprintContainer').style.display = 'none';
     }
-}
 
-// Отрисовка активного спринта
-function renderActiveSprint(sprint) {
-    const container = document.getElementById('activeSprintContent');
-    const progress = sprint.completion_percentage || 0;
-    const daysLeft = Math.ceil((new Date(sprint.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+    // Отрисовка активного спринта
+    function renderActiveSprint(sprint) {
+        const container = document.getElementById('activeSprintContent');
+        const progress = sprint.completion_percentage || 0;
+        const daysLeft = Math.ceil((new Date(sprint.end_date) - new Date()) / (1000 * 60 * 60 * 24));
 
-    container.innerHTML = `
+        container.innerHTML = `
         <div class="row">
             <div class="col-md-8">
                 <h6 class="text-success">${sprint.name}</h6>
@@ -330,14 +331,14 @@ function renderActiveSprint(sprint) {
             </div>
         </div>
     `;
-}
+    }
 
-// Отрисовка списка спринтов
-function renderSprints() {
-    const container = document.getElementById('sprintsContainer');
+    // Отрисовка списка спринтов
+    function renderSprints() {
+        const container = document.getElementById('sprintsContainer');
 
-    if (sprints.length === 0) {
-        container.innerHTML = `
+        if (sprints.length === 0) {
+            container.innerHTML = `
             <div class="text-center py-5">
                 <i class="bi bi-lightning-charge text-muted" style="font-size: 3rem;"></i>
                 <h5 class="mt-3 text-muted">Спринты не найдены</h5>
@@ -347,16 +348,16 @@ function renderSprints() {
                 </button>
             </div>
         `;
-        return;
-    }
+            return;
+        }
 
-    let html = '<div class="row">';
+        let html = '<div class="row">';
 
-    sprints.forEach(sprint => {
-        const statusBadge = getStatusBadge(sprint.status);
-        const progress = sprint.completion_percentage || 0;
+        sprints.forEach(sprint => {
+            const statusBadge = getStatusBadge(sprint.status);
+            const progress = sprint.completion_percentage || 0;
 
-        html += `
+            html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -411,28 +412,28 @@ function renderSprints() {
                 </div>
             </div>
         `;
-    });
+        });
 
-    html += '</div>';
-    container.innerHTML = html;
-}
+        html += '</div>';
+        container.innerHTML = html;
+    }
 
-// Получение бейджа статуса
-function getStatusBadge(status) {
-    const badges = {
-        'planning': '<span class="badge bg-secondary">Планирование</span>',
-        'active': '<span class="badge bg-success">Активный</span>',
-        'completed': '<span class="badge bg-warning">Завершен</span>',
-        'cancelled': '<span class="badge bg-danger">Отменен</span>'
-    };
-    return badges[status] || '<span class="badge bg-secondary">Неизвестно</span>';
-}
+    // Получение бейджа статуса
+    function getStatusBadge(status) {
+        const badges = {
+            'planning': '<span class="badge bg-secondary">Планирование</span>',
+            'active': '<span class="badge bg-success">Активный</span>',
+            'completed': '<span class="badge bg-warning">Завершен</span>',
+            'cancelled': '<span class="badge bg-danger">Отменен</span>'
+        };
+        return badges[status] || '<span class="badge bg-secondary">Неизвестно</span>';
+    }
 
-// Получение кнопок действий в зависимости от статуса
-function getActionButtons(sprint) {
-    switch (sprint.status) {
-        case 'planning':
-            return `
+    // Получение кнопок действий в зависимости от статуса
+    function getActionButtons(sprint) {
+        switch (sprint.status) {
+            case 'planning':
+                return `
                 <button class="btn btn-outline-success btn-sm" onclick="showStartSprintModal('${sprint.id}')">
                     <i class="bi bi-play-circle"></i>
                 </button>
@@ -443,8 +444,8 @@ function getActionButtons(sprint) {
                     <i class="bi bi-x-circle"></i>
                 </button>
             `;
-        case 'active':
-            return `
+            case 'active':
+                return `
                 <button class="btn btn-outline-warning btn-sm" onclick="showCompleteSprintModal('${sprint.id}')">
                     <i class="bi bi-check-circle"></i>
                 </button>
@@ -452,221 +453,229 @@ function getActionButtons(sprint) {
                     <i class="bi bi-graph-down"></i>
                 </button>
             `;
-        case 'completed':
-            return `
+            case 'completed':
+                return `
                 <button class="btn btn-outline-info btn-sm" onclick="showSprintStats('${sprint.id}')">
                     <i class="bi bi-bar-chart"></i>
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" onclick="showBurndownChart('${sprint.id}')">
                     <i class="bi bi-graph-down"></i>
                 </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="showRetrospective('${sprint.id}')">
+                    <i class="bi bi-chat-square-text"></i>
+                </button>
             `;
-        default:
-            return '';
-    }
-}
-
-// Создание спринта
-async function createSprint() {
-    const form = document.getElementById('createSprintForm');
-    const formData = new FormData(form);
-
-    const sprintData = {
-        name: document.getElementById('sprintName').value,
-        description: document.getElementById('sprintDescription').value,
-        goal: document.getElementById('sprintGoal').value,
-        capacity_hours: parseInt(document.getElementById('sprintCapacity').value) || null,
-        velocity_points: parseInt(document.getElementById('sprintVelocity').value) || null,
-        project_id: currentProjectId
-    };
-
-    try {
-        const response = await fetch('/api/v1/sprints/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(sprintData)
-        });
-
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('createSprintModal')).hide();
-            form.reset();
-            loadSprints();
-            showSuccess('Спринт успешно создан');
-        } else {
-            const error = await response.json();
-            showError(error.detail || 'Ошибка создания спринта');
+            default:
+                return '';
         }
-    } catch (error) {
-        console.error('Ошибка создания спринта:', error);
-        showError('Не удалось создать спринт');
     }
-}
 
-// Показать модальное окно запуска спринта
-function showStartSprintModal(sprintId) {
-    const sprint = sprints.find(s => s.id === sprintId);
-    if (!sprint) return;
+    // Создание спринта
+    async function createSprint() {
+        const form = document.getElementById('createSprintForm');
+        const formData = new FormData(form);
 
-    document.getElementById('startSprintId').value = sprintId;
-    document.getElementById('startCapacity').value = sprint.capacity_hours || '';
-    document.getElementById('startVelocity').value = sprint.velocity_points || '';
+        const sprintData = {
+            name: document.getElementById('sprintName').value,
+            description: document.getElementById('sprintDescription').value,
+            goal: document.getElementById('sprintGoal').value,
+            capacity_hours: parseInt(document.getElementById('sprintCapacity').value) || null,
+            velocity_points: parseInt(document.getElementById('sprintVelocity').value) || null,
+            project_id: currentProjectId
+        };
 
-    // Устанавливаем даты по умолчанию
-    const today = new Date();
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 14); // 2 недели по умолчанию
+        try {
+            const response = await fetch('/api/v1/sprints/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(sprintData)
+            });
 
-    document.getElementById('startDate').value = today.toISOString().split('T')[0];
-    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
-
-    new bootstrap.Modal(document.getElementById('startSprintModal')).show();
-}
-
-// Запуск спринта
-async function startSprint() {
-    const sprintId = document.getElementById('startSprintId').value;
-
-    const startData = {
-        start_date: document.getElementById('startDate').value,
-        end_date: document.getElementById('endDate').value,
-        capacity_hours: parseInt(document.getElementById('startCapacity').value) || null,
-        velocity_points: parseInt(document.getElementById('startVelocity').value) || null
-    };
-
-    try {
-        const response = await fetch(`/api/v1/sprints/${sprintId}/start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(startData)
-        });
-
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('startSprintModal')).hide();
-            loadSprints();
-            showSuccess('Спринт успешно запущен');
-        } else {
-            const error = await response.json();
-            showError(error.detail || 'Ошибка запуска спринта');
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('createSprintModal')).hide();
+                form.reset();
+                loadSprints();
+                showSuccess('Спринт успешно создан');
+            } else {
+                const error = await response.json();
+                showError(error.detail || 'Ошибка создания спринта');
+            }
+        } catch (error) {
+            console.error('Ошибка создания спринта:', error);
+            showError('Не удалось создать спринт');
         }
-    } catch (error) {
-        console.error('Ошибка запуска спринта:', error);
-        showError('Не удалось запустить спринт');
     }
-}
 
-// Показать модальное окно завершения спринта
-function showCompleteSprintModal(sprintId) {
-    const sprint = sprints.find(s => s.id === sprintId);
-    if (!sprint) return;
+    // Показать модальное окно запуска спринта
+    function showStartSprintModal(sprintId) {
+        const sprint = sprints.find(s => s.id === sprintId);
+        if (!sprint) return;
 
-    document.getElementById('completeSprintId').value = sprintId;
-    document.getElementById('completedPoints').value = sprint.completed_points || 0;
-    document.getElementById('retrospectiveNotes').value = '';
+        document.getElementById('startSprintId').value = sprintId;
+        document.getElementById('startCapacity').value = sprint.capacity_hours || '';
+        document.getElementById('startVelocity').value = sprint.velocity_points || '';
 
-    new bootstrap.Modal(document.getElementById('completeSprintModal')).show();
-}
+        // Устанавливаем даты по умолчанию
+        const today = new Date();
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 14); // 2 недели по умолчанию
 
-// Завершение спринта
-async function completeSprint() {
-    const sprintId = document.getElementById('completeSprintId').value;
+        document.getElementById('startDate').value = today.toISOString().split('T')[0];
+        document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
 
-    const completeData = {
-        completed_points: parseInt(document.getElementById('completedPoints').value) || 0,
-        retrospective_notes: document.getElementById('retrospectiveNotes').value
-    };
+        new bootstrap.Modal(document.getElementById('startSprintModal')).show();
+    }
 
-    try {
-        const response = await fetch(`/api/v1/sprints/${sprintId}/complete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(completeData)
-        });
+    // Запуск спринта
+    async function startSprint() {
+        const sprintId = document.getElementById('startSprintId').value;
 
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('completeSprintModal')).hide();
-            loadSprints();
-            showSuccess('Спринт успешно завершен');
-        } else {
-            const error = await response.json();
-            showError(error.detail || 'Ошибка завершения спринта');
+        const startData = {
+            start_date: document.getElementById('startDate').value,
+            end_date: document.getElementById('endDate').value,
+            capacity_hours: parseInt(document.getElementById('startCapacity').value) || null,
+            velocity_points: parseInt(document.getElementById('startVelocity').value) || null
+        };
+
+        try {
+            const response = await fetch(`/api/v1/sprints/${sprintId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(startData)
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('startSprintModal')).hide();
+                loadSprints();
+                showSuccess('Спринт успешно запущен');
+            } else {
+                const error = await response.json();
+                showError(error.detail || 'Ошибка запуска спринта');
+            }
+        } catch (error) {
+            console.error('Ошибка запуска спринта:', error);
+            showError('Не удалось запустить спринт');
         }
-    } catch (error) {
-        console.error('Ошибка завершения спринта:', error);
-        showError('Не удалось завершить спринт');
     }
-}
 
-// Отмена спринта
-async function cancelSprint(sprintId) {
-    if (!confirm('Вы уверены, что хотите отменить этот спринт?')) return;
+    // Показать модальное окно завершения спринта
+    function showCompleteSprintModal(sprintId) {
+        const sprint = sprints.find(s => s.id === sprintId);
+        if (!sprint) return;
 
-    try {
-        const response = await fetch(`/api/v1/sprints/${sprintId}/cancel`, {
-            method: 'POST'
-        });
+        document.getElementById('completeSprintId').value = sprintId;
+        document.getElementById('completedPoints').value = sprint.completed_points || 0;
+        document.getElementById('retrospectiveNotes').value = '';
 
-        if (response.ok) {
-            loadSprints();
-            showSuccess('Спринт отменен');
-        } else {
-            const error = await response.json();
-            showError(error.detail || 'Ошибка отмены спринта');
+        new bootstrap.Modal(document.getElementById('completeSprintModal')).show();
+    }
+
+    // Завершение спринта
+    async function completeSprint() {
+        const sprintId = document.getElementById('completeSprintId').value;
+
+        const completeData = {
+            completed_points: parseInt(document.getElementById('completedPoints').value) || 0,
+            retrospective_notes: document.getElementById('retrospectiveNotes').value
+        };
+
+        try {
+            const response = await fetch(`/api/v1/sprints/${sprintId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(completeData)
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('completeSprintModal')).hide();
+                loadSprints();
+                showSuccess('Спринт успешно завершен');
+            } else {
+                const error = await response.json();
+                showError(error.detail || 'Ошибка завершения спринта');
+            }
+        } catch (error) {
+            console.error('Ошибка завершения спринта:', error);
+            showError('Не удалось завершить спринт');
         }
-    } catch (error) {
-        console.error('Ошибка отмены спринта:', error);
-        showError('Не удалось отменить спринт');
     }
-}
 
-// Просмотр деталей спринта
-function viewSprintDetails(sprintId) {
-    window.location.href = `/sprints/${sprintId}`;
-}
+    // Отмена спринта
+    async function cancelSprint(sprintId) {
+        if (!confirm('Вы уверены, что хотите отменить этот спринт?')) return;
 
-// Показать burndown chart
-function showBurndownChart(sprintId) {
-    window.location.href = `/sprints/${sprintId}/burndown`;
-}
+        try {
+            const response = await fetch(`/api/v1/sprints/${sprintId}/cancel`, {
+                method: 'POST'
+            });
 
-// Показать статистику спринта
-function showSprintStats(sprintId) {
-    window.location.href = `/sprints/${sprintId}/stats`;
-}
+            if (response.ok) {
+                loadSprints();
+                showSuccess('Спринт отменен');
+            } else {
+                const error = await response.json();
+                showError(error.detail || 'Ошибка отмены спринта');
+            }
+        } catch (error) {
+            console.error('Ошибка отмены спринта:', error);
+            showError('Не удалось отменить спринт');
+        }
+    }
 
-// Редактирование спринта (заглушка)
-function editSprint(sprintId) {
-    showInfo('Редактирование спринтов будет доступно в следующей версии');
-}
+    // Просмотр деталей спринта
+    function viewSprintDetails(sprintId) {
+        window.location.href = `/sprints/${sprintId}`;
+    }
 
-// Вспомогательные функции
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU');
-}
+    // Показать burndown chart
+    function showBurndownChart(sprintId) {
+        window.location.href = `/sprints/${sprintId}/burndown`;
+    }
 
-function showSuccess(message) {
-    // Используем существующую систему уведомлений или создаем простое уведомление
-    alert(message);
-}
+    // Показать статистику спринта
+    function showSprintStats(sprintId) {
+        window.location.href = `/sprints/${sprintId}/stats`;
+    }
 
-function showError(message) {
-    alert('Ошибка: ' + message);
-}
+    // Показать ретроспективу спринта
+    function showRetrospective(sprintId) {
+        window.location.href = `/sprints/${sprintId}/retrospective?sprint_id=${sprintId}`;
+    }
 
-function showInfo(message) {
-    alert(message);
-}
+    // Редактирование спринта (заглушка)
+    function editSprint(sprintId) {
+        showInfo('Редактирование спринтов будет доступно в следующей версии');
+    }
 
-// Установка ID проекта в форме создания
-document.getElementById('createSprintModal').addEventListener('show.bs.modal', function() {
-    document.getElementById('sprintProjectId').value = currentProjectId;
-});
+    // Вспомогательные функции
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU');
+    }
+
+    function showSuccess(message) {
+        // Используем существующую систему уведомлений или создаем простое уведомление
+        alert(message);
+    }
+
+    function showError(message) {
+        alert('Ошибка: ' + message);
+    }
+
+    function showInfo(message) {
+        alert(message);
+    }
+
+    // Установка ID проекта в форме создания
+    document.getElementById('createSprintModal').addEventListener('show.bs.modal', function () {
+        document.getElementById('sprintProjectId').value = currentProjectId;
+    });
 </script>
 {% endblock %}

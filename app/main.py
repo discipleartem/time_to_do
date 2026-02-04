@@ -170,6 +170,18 @@ async def sprint_burndown_page(request: Request, sprint_id: str) -> HTMLResponse
     )
 
 
+@app.get("/sprints/{sprint_id}/retrospective", response_class=HTMLResponse)
+async def sprint_retrospective_page(request: Request, sprint_id: str) -> HTMLResponse:
+    """
+    Страница ретроспективы спринта
+    """
+    return templates.TemplateResponse(
+        request,
+        "sprint_retrospective.html",
+        {"settings": settings},
+    )
+
+
 # Exception handlers
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(

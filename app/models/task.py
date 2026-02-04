@@ -218,6 +218,12 @@ class Task(BaseModel):
         cascade="all, delete-orphan",
     )
 
+    notifications = relationship(
+        "Notification",
+        back_populates="task",
+        cascade="all, delete-orphan",
+    )
+
     def __repr__(self) -> str:
         return f"<Task(title={self.title}, status={self.status})>"
 

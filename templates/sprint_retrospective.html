@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block title %}Ретроспектива спринта - {{ settings.PROJECT_NAME }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        <li class="breadcrumb-item"><a href="/projects">Проекты</a></li>
+        <li class="breadcrumb-item"><a href="/sprints">SCRUM Спринты</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Ретроспектива спринта</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-chat-square-text text-info me-2"></i>
+                Ретроспектива спринта
+            </h1>
+            <div>
+                <button class="btn btn-outline-secondary me-2" onclick="goBack()">
+                    <i class="bi bi-arrow-left me-1"></i>Назад
+                </button>
+                <button class="btn btn-success" onclick="saveRetrospective()" id="saveButton">
+                    <i class="bi bi-check-circle me-1"></i>Сохранить ретроспективу
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Информация о спринте -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0" id="sprintTitle">Загрузка информации о спринте...</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="sprintInfo">
+                            <div class="spinner-border spinner-border-sm me-2"></div>
+                            Загрузка...
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-end">
+                            <span class="badge bg-success" id="sprintStatus">Активный</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Метрики спринта -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">Story Points</h5>
+                <h2 id="completedPoints">0</h2>
+                <small>завершено</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">Задачи</h5>
+                <h2 id="completedTasks">0</h2>
+                <small>завершено</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">Velocity</h5>
+                <h2 id="velocity">0</h2>
+                <small>очков/спринт</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">Длительность</h5>
+                <h2 id="duration">0</h2>
+                <small>дней</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Форма ретроспективы -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-hand-thumbs-up me-2"></i>Что прошло хорошо
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="wentWellList" class="mb-3">
+                    <!-- Динамический список -->
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="wentWellInput"
+                           placeholder="Что прошло хорошо в этом спринте?">
+                    <button class="btn btn-success" onclick="addWentWell()">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-hand-thumbs-down me-2"></i>Что можно улучшить
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="improveList" class="mb-3">
+                    <!-- Динамический список -->
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="improveInput"
+                           placeholder="Что можно улучшить в следующем спринте?">
+                    <button class="btn btn-danger" onclick="addImprove()">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Новые идеи
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="ideasList" class="mb-3">
+                    <!-- Динамический список -->
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="ideasInput"
+                           placeholder="Новые идеи для следующих спринтов">
+                    <button class="btn btn-warning" onclick="addIdea()">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-heart me-2"></i>Действия команды
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="actionsList" class="mb-3">
+                    <!-- Динамический список -->
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="actionsInput"
+                           placeholder="Конкретные действия для улучшения">
+                    <button class="btn btn-info" onclick="addAction()">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Дополнительные заметки -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-journal-text me-2"></i>Общие заметки ретроспективы
+                </h5>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="generalNotes" rows="5"
+                          placeholder="Дополнительные мысли и наблюдения о спринте..."></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Исторические ретроспективы -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Предыдущие ретроспективы
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="previousRetrospectives">
+                    <div class="text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        Загрузка предыдущих ретроспектив...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSprintId = null;
+let retrospectiveData = {
+    went_well: [],
+    improve: [],
+    ideas: [],
+    actions: [],
+    general_notes: ''
+};
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentSprintId = urlParams.get('sprint_id');
+
+    if (currentSprintId) {
+        loadSprintData();
+        loadRetrospective();
+        loadPreviousRetrospectives();
+    } else {
+        showError('ID спринта не указан');
+    }
+});
+
+// Загрузка данных спринта
+async function loadSprintData() {
+    try {
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}`);
+        if (!response.ok) throw new Error('Ошибка загрузки спринта');
+
+        const sprint = await response.json();
+        updateSprintInfo(sprint);
+        loadSprintStats();
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showError('Ошибка загрузки данных спринта');
+    }
+}
+
+// Обновление информации о спринте
+function updateSprintInfo(sprint) {
+    document.getElementById('sprintTitle').textContent = sprint.name;
+    document.getElementById('sprintInfo').innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Цель:</strong> ${sprint.goal || 'Не указана'}</p>
+                <p><strong>Проект:</strong> ${sprint.project_id}</p>
+                <p><strong>Длительность:</strong> ${sprint.duration_days || 0} дней</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Начало:</strong> ${formatDate(sprint.start_date)}</p>
+                <p><strong>Окончание:</strong> ${formatDate(sprint.end_date)}</p>
+                <p><strong>Capacity:</strong> ${sprint.capacity_hours || 0} часов</p>
+            </div>
+        </div>
+    `;
+
+    // Обновление статуса
+    const statusElement = document.getElementById('sprintStatus');
+    statusElement.textContent = getStatusText(sprint.status);
+    statusElement.className = `badge bg-${getStatusColor(sprint.status)}`;
+}
+
+// Загрузка статистики спринта
+async function loadSprintStats() {
+    try {
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}/stats`);
+        if (!response.ok) throw new Error('Ошибка загрузки статистики');
+
+        const stats = await response.json();
+        updateStats(stats);
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
+
+// Обновление метрик
+function updateStats(stats) {
+    document.getElementById('completedPoints').textContent = stats.completed_points || 0;
+    document.getElementById('completedTasks').textContent = stats.completed_task_count || 0;
+    document.getElementById('velocity').textContent = stats.velocity_points || 0;
+    document.getElementById('duration').textContent = stats.duration_days || 0;
+}
+
+// Загрузка ретроспективы
+async function loadRetrospective() {
+    try {
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}`);
+        if (!response.ok) throw new Error('Ошибка загрузки спринта');
+
+        const sprint = await response.json();
+
+        if (sprint.retrospective_notes) {
+            try {
+                const notes = JSON.parse(sprint.retrospective_notes);
+                retrospectiveData = notes;
+                populateRetrospectiveFields();
+            } catch (e) {
+                // Если в старом формате
+                document.getElementById('generalNotes').value = sprint.retrospective_notes;
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
+
+// Заполнение полей ретроспективы
+function populateRetrospectiveFields() {
+    // Что прошло хорошо
+    const wentWellList = document.getElementById('wentWellList');
+    wentWellList.innerHTML = '';
+    retrospectiveData.went_well.forEach((item, index) => {
+        wentWellList.appendChild(createListItem(item, 'wentWell', index));
+    });
+
+    // Что можно улучшить
+    const improveList = document.getElementById('improveList');
+    improveList.innerHTML = '';
+    retrospectiveData.improve.forEach((item, index) => {
+        improveList.appendChild(createListItem(item, 'improve', index));
+    });
+
+    // Новые идеи
+    const ideasList = document.getElementById('ideasList');
+    ideasList.innerHTML = '';
+    retrospectiveData.ideas.forEach((item, index) => {
+        ideasList.appendChild(createListItem(item, 'ideas', index));
+    });
+
+    // Действия команды
+    const actionsList = document.getElementById('actionsList');
+    actionsList.innerHTML = '';
+    retrospectiveData.actions.forEach((item, index) => {
+        actionsList.appendChild(createListItem(item, 'actions', index));
+    });
+
+    // Общие заметки
+    document.getElementById('generalNotes').value = retrospectiveData.general_notes || '';
+}
+
+// Создание элемента списка
+function createListItem(text, type, index) {
+    const div = document.createElement('div');
+    div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span>${text}</span>
+        <button class="btn btn-sm btn-outline-danger" onclick="removeItem('${type}', ${index})">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+    return div;
+}
+
+// Добавление элементов
+function addWentWell() {
+    const input = document.getElementById('wentWellInput');
+    const value = input.value.trim();
+    if (value) {
+        retrospectiveData.went_well.push(value);
+        input.value = '';
+        populateRetrospectiveFields();
+    }
+}
+
+function addImprove() {
+    const input = document.getElementById('improveInput');
+    const value = input.value.trim();
+    if (value) {
+        retrospectiveData.improve.push(value);
+        input.value = '';
+        populateRetrospectiveFields();
+    }
+}
+
+function addIdea() {
+    const input = document.getElementById('ideasInput');
+    const value = input.value.trim();
+    if (value) {
+        retrospectiveData.ideas.push(value);
+        input.value = '';
+        populateRetrospectiveFields();
+    }
+}
+
+function addAction() {
+    const input = document.getElementById('actionsInput');
+    const value = input.value.trim();
+    if (value) {
+        retrospectiveData.actions.push(value);
+        input.value = '';
+        populateRetrospectiveFields();
+    }
+}
+
+// Удаление элемента
+function removeItem(type, index) {
+    retrospectiveData[type].splice(index, 1);
+    populateRetrospectiveFields();
+}
+
+// Сохранение ретроспективы
+async function saveRetrospective() {
+    const saveButton = document.getElementById('saveButton');
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+
+    try {
+        retrospectiveData.general_notes = document.getElementById('generalNotes').value;
+
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                retrospective_notes: JSON.stringify(retrospectiveData)
+            })
+        });
+
+        if (!response.ok) throw new Error('Ошибка сохранения');
+
+        showSuccess('Ретроспектива успешно сохранена!');
+
+        // Обновляем информацию о спринте
+        await loadSprintData();
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showError('Ошибка сохранения ретроспективы');
+    } finally {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<i class="bi bi-check-circle me-1"></i>Сохранить ретроспективу';
+    }
+}
+
+// Загрузка предыдущих ретроспектив
+async function loadPreviousRetrospectives() {
+    try {
+        // Получаем ID проекта из текущего спринта
+        const sprintResponse = await fetch(`/api/v1/sprints/${currentSprintId}`);
+        const sprint = await sprintResponse.json();
+
+        const response = await fetch(`/api/v1/sprints/project/${sprint.project_id}?include_completed=true`);
+        if (!response.ok) throw new Error('Ошибка загрузки спринтов');
+
+        const sprints = await response.json();
+        const completedSprints = sprints.filter(s => s.status === 'completed' && s.id !== currentSprintId);
+
+        const container = document.getElementById('previousRetrospectives');
+
+        if (completedSprints.length === 0) {
+            container.innerHTML = '<p class="text-muted">Нет предыдущих ретроспектив</p>';
+            return;
+        }
+
+        container.innerHTML = completedSprints.map(sprint => {
+            let retrospectiveContent = '';
+            if (sprint.retrospective_notes) {
+                try {
+                    const notes = JSON.parse(sprint.retrospective_notes);
+                    retrospectiveContent = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Что прошло хорошо:</strong>
+                                <ul>${notes.well_well?.map(item => `<li>${item}</li>`).join('') || '<li>Нет данных</li>'}</ul>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Что улучшить:</strong>
+                                <ul>${notes.improve?.map(item => `<li>${item}</li>`).join('') || '<li>Нет данных</li>'}</ul>
+                            </div>
+                        </div>
+                    `;
+                } catch (e) {
+                    retrospectiveContent = `<p>${sprint.retrospective_notes}</p>`;
+                }
+            }
+
+            return `
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">${sprint.name} (${formatDate(sprint.end_date)})</h6>
+                    </div>
+                    <div class="card-body">
+                        ${retrospectiveContent || '<p class="text-muted">Ретроспектива не найдена</p>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        document.getElementById('previousRetrospectives').innerHTML =
+            '<p class="text-danger">Ошибка загрузки предыдущих ретроспектив</p>';
+    }
+}
+
+// Вспомогательные функции
+function goBack() {
+    window.history.back();
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'Не указана';
+    return new Date(dateString).toLocaleDateString('ru-RU');
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'planning': 'Планирование',
+        'active': 'Активный',
+        'completed': 'Завершен',
+        'cancelled': 'Отменен'
+    };
+    return statusMap[status] || status;
+}
+
+function getStatusColor(status) {
+    const colorMap = {
+        'planning': 'warning',
+        'active': 'success',
+        'completed': 'primary',
+        'cancelled': 'danger'
+    };
+    return colorMap[status] || 'secondary';
+}
+
+function showSuccess(message) {
+    // Используем существующую систему уведомлений
+    if (window.showNotification) {
+        window.showNotification(message, 'success');
+    } else {
+        alert(message);
+    }
+}
+
+function showError(message) {
+    // Используем существующую систему уведомлений
+    if (window.showNotification) {
+        window.showNotification(message, 'error');
+    } else {
+        alert(message);
+    }
+}
+
+// Обработка Enter в полях ввода
+document.getElementById('wentWellInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addWentWell();
+});
+
+document.getElementById('improveInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addImprove();
+});
+
+document.getElementById('ideasInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addIdea();
+});
+
+document.getElementById('actionsInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') addAction();
+});
+</script>
+{% endblock %}

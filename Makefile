@@ -42,13 +42,24 @@ redis-shell:
 # =============================================================================
 
 test:
-	@echo "🧪 Запуск всех тестов с покрытием кода..."
-	.venv/bin/pytest --cov=app --cov-report=html --cov-report=term -v
+	@echo "🧪 Запуск всех тестов..."
+	@. .venv/bin/activate && pytest tests/ --no-cov -n 1 --tb=short
+
+test-fast:
+	@echo "⚡ Быстрые тесты (без интеграционных)..."
+	@. .venv/bin/activate && pytest tests/ -m "not integration" --no-cov -n 1 --tb=short
+
+
+test-cov:
+	@echo "📊 Тесты с покрытием кода..."
+	@. .venv/bin/activate && pytest tests/ --cov=app --cov-report=term-missing --cov-report=html -n 1 --tb=short
 
 test-setup:
-	@echo "🗄️ Создание тестовой базы данных..."
-	createdb timeto_do_test || echo "База данных уже существует"
-	@echo "🔄 Применение миграций для тестовой БД..."
+	@echo "🗄️ Пересоздание тестовой базы данных..."
+	@PGPASSWORD=postgres dropdb -h localhost -U postgres timeto_do_test 2>/dev/null || echo "База данных не существует, продолжаем создание..."
+	@PGPASSWORD=postgres createdb -h localhost -U postgres timeto_do_test || echo "База данных уже существует"
+	@echo "🔄 Сброс состояния миграций и применение для тестовой БД..."
+	DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/timeto_do_test" .venv/bin/alembic stamp base
 	DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/timeto_do_test" .venv/bin/alembic upgrade head
 	@echo "✅ Тестовая база данных готова"
 
@@ -244,7 +255,9 @@ help:
 	@echo "=============================================================================="
 	@echo " 🧪 ТЕСТИРОВАНИЕ"
 	@echo "=============================================================================="
-	@echo "   make test           - Запуск всех тестов с покрытием кода"
+	@echo "   make test           - Запуск всех тестов (2:14)"
+	@echo "   make test-fast      - Быстрые тесты без интеграционных (~30 сек)"
+	@echo "   make test-cov      - Тесты с покрытием кода"
 	@echo "   make test-setup     - Создание тестовой базы данных"
 	@echo ""
 	@echo "=============================================================================="

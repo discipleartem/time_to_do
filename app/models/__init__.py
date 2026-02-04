@@ -2,6 +2,7 @@
 SQLAlchemy модели данных
 """
 
+from .notification import Notification, NotificationType
 from .project import Project, ProjectMember
 from .sprint import Sprint, SprintTask
 from .task import Comment, Task
@@ -17,4 +18,6 @@ __all__ = [
     "Sprint",
     "SprintTask",
     "TimeEntry",
+    "Notification",
+    "NotificationType",
 ]

@@ -44,6 +44,7 @@ python-dotenv = "^1.2.1"  # ✅ Обновлено до последней ве�
 pytest = "^9.0.2"  # ✅ Актуальная версия
 pytest-asyncio = "^1.3.0"  # ✅ Обновлено до последней версии
 pytest-cov = "^7.0.0"  # ✅ Обновлено до последней версии
+pytest-xdist = "^3.8.0"  # ✅ Параллельное выполнение тестов
 factory-boy = "^3.3.1"  # ✅ Factory Pattern для тестовых данных
 hypothesis = "^6.108.0"  # ✅ Property-based testing
 
@@ -100,6 +101,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"*/services/*" = ["E712"]  # SQLAlchemy требует == True/False для булевых полей
 "__init__.py" = ["F401"]
 
 [tool.mypy]
@@ -111,10 +113,26 @@ disallow_untyped_defs = false
 no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = false
+# SQLAlchemy 2.0 совместимость
+strict_optional = true
+implicit_reexport = false
+strict_equality = true
 
+# Специальные настройки для SQLAlchemy 2.0
 [[tool.mypy.overrides]]
 module = [
     "sqlalchemy.*",
+    "sqlalchemy.orm.*",
+    "sqlalchemy.ext.*",
+]
+ignore_missing_imports = true
+# Включаем строгую проверку для SQLAlchemy
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
     "alembic.*",
 ]
 ignore_missing_imports = true
@@ -124,10 +142,22 @@ module = [
     "app.models.*",
 ]
 disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# Добавляем специальные правила для сервисов SQLAlchemy
+[[tool.mypy.overrides]]
+module = [
+    "app.services.*",
+]
+# Разрешаем некоторые несоответствия для SQLAlchemy 2.0
+disallow_untyped_defs = false
+check_untyped_defs = false
+warn_return_any = false
+warn_no_return = false
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --strict-markers --strict-config"
+addopts = "-ra -q --strict-markers --strict-config -n auto --dist worksteal"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [

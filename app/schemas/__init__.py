@@ -3,6 +3,18 @@ Pydantic схемы для API
 """
 
 from .auth import LoginRequest, Token, TokenData
+from .notification import (
+    NotificationCreate,
+    NotificationFactory,
+    NotificationList,
+    NotificationMarkRead,
+    NotificationPreferences,
+    NotificationRead,
+    NotificationStats,
+    NotificationUpdate,
+    TaskAssignedNotification,
+    TaskCompletedNotification,
+)
 from .project import (
     Project,
     ProjectCreate,
@@ -40,4 +52,14 @@ __all__ = [
     "Token",
     "TokenData",
     "LoginRequest",
+    "NotificationCreate",
+    "NotificationRead",
+    "NotificationUpdate",
+    "NotificationList",
+    "NotificationStats",
+    "NotificationPreferences",
+    "NotificationMarkRead",
+    "NotificationFactory",
+    "TaskAssignedNotification",
+    "TaskCompletedNotification",
 ]

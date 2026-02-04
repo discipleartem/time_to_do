@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     auth_router,
     github_router,
+    notifications_router,
     projects_router,
     sprints_router,
     tasks_router,
@@ -63,6 +64,13 @@ api_router.include_router(
 api_router.include_router(
     sprints_router,
     tags=["SCRUM"],
+)
+
+# Уведомления
+api_router.include_router(
+    notifications_router,
+    prefix="/notifications",
+    tags=["Уведомления"],
 )
 
 # WebSocket

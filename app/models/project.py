@@ -123,6 +123,12 @@ class Project(BaseModel):
         cascade="all, delete-orphan",
     )
 
+    notifications = relationship(
+        "Notification",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+
     def __repr__(self) -> str:
         return f"<Project(name={self.name}, status={self.status})>"
 

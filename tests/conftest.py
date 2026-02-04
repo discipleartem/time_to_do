@@ -42,14 +42,36 @@ def event_loop() -> Generator:
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="function")
-async def db_session():
-    """Создание тестовой сессии базы данных"""
-    # Создаем отдельный engine для каждого теста
+@pytest_asyncio.fixture(scope="session")
+async def db_engine():
+    """Создание тестового движка для всей сессии"""
     test_engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        poolclass=None,  # Отключаем пул для тестов
+    )
+
+    # Инициализация БД один раз за сессию
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield test_engine
+    await test_engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def db_session():
+    """Создание тестовой сессии базы данных с изолированным engine"""
+    test_engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=1,
+        max_overflow=0,
     )
 
     TestingSessionLocal = sessionmaker(
@@ -91,17 +113,14 @@ async def client(override_get_db):
     app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def auth_headers(db_session: AsyncSession):
     """Создание пользователя и заголовков аутентификации для тестов"""
     from app.auth.service import AuthService
     from app.core.security import create_access_token
-
-    # Создаем тестового пользователя
-    auth_service = AuthService(db_session)
-
     from app.schemas.auth import RegisterRequest
 
+    auth_service = AuthService(db_session)
     user_data = RegisterRequest(
         email="test@example.com",
         username="testuser",
@@ -113,15 +132,13 @@ async def auth_headers(db_session: AsyncSession):
         user, access_token, _ = await auth_service.register(user_data)
         await db_session.commit()
     except Exception:
-        # Если пользователь уже существует, получаем его
         user = await auth_service.get_user_by_email("test@example.com")
         if user:
             access_token = create_access_token(subject=user.email)
         else:
             raise
 
-    result = {"Authorization": f"Bearer {access_token}", "access_token": access_token}
-    return result
+    return {"Authorization": f"Bearer {access_token}", "access_token": access_token}
 
 
 @pytest_asyncio.fixture
