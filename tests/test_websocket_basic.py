@@ -283,7 +283,7 @@ class TestWebSocketEvents:
         assert event.event_type == EventType.TASK_CREATED
         assert event.project_id == project_id
         assert event.user_id == user_id
-        assert event.data["task_id"] == task_id  # В data хранится оригинальный UUID
+        assert event.data["task_id"] == str(task_id)  # task_id сериализуется в строку
 
     def test_create_error_event(self):
         """Тест создания события ошибки"""

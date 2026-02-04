@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block title %}SCRUM Спринты - {{ settings.PROJECT_NAME }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        <li class="breadcrumb-item"><a href="/projects">Проекты</a></li>
+        <li class="breadcrumb-item active" aria-current="page">SCRUM Спринты</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-lightning-charge text-warning me-2"></i>
+                SCRUM Спринты
+            </h1>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="loadSprints()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Обновить
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSprintModal">
+                    <i class="bi bi-plus-circle me-1"></i>Новый спринт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Выбор проекта -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <label for="projectSelect" class="form-label">Выберите проект:</label>
+        <select class="form-select" id="projectSelect" onchange="loadSprints()">
+            <option value="">Загрузка проектов...</option>
+        </select>
+    </div>
+    <div class="col-md-6">
+        <div class="form-check form-switch mt-4">
+            <input class="form-check-input" type="checkbox" id="showCompleted" checked onchange="loadSprints()">
+            <label class="form-check-label" for="showCompleted">
+                Показать завершенные спринты
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Активный спринт -->
+<div id="activeSprintContainer" class="mb-4" style="display: none;">
+    <div class="card border-success">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-play-circle me-2"></i>
+                Активный спринт
+            </h5>
+        </div>
+        <div class="card-body" id="activeSprintContent">
+            <!-- Загрузка... -->
+        </div>
+    </div>
+</div>
+
+<!-- Список спринтов -->
+<div id="sprintsContainer">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="mt-2">Загрузка спринтов...</p>
+    </div>
+</div>
+
+<!-- Модальное окно создания спринта -->
+<div class="modal fade" id="createSprintModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создание нового спринта</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createSprintForm">
+                    <div class="mb-3">
+                        <label for="sprintName" class="form-label">Название спринта *</label>
+                        <input type="text" class="form-control" id="sprintName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sprintDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="sprintDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sprintGoal" class="form-label">Цель спринта</label>
+                        <input type="text" class="form-control" id="sprintGoal" placeholder="Что мы хотим достичь в этом спринте?">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sprintCapacity" class="form-label">Capacity (часы)</label>
+                                <input type="number" class="form-control" id="sprintCapacity" min="0" placeholder="80">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sprintVelocity" class="form-label">Velocity (story points)</label>
+                                <input type="number" class="form-control" id="sprintVelocity" min="0" placeholder="20">
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="sprintProjectId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="createSprint()">
+                    <i class="bi bi-plus-circle me-1"></i>Создать спринт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно запуска спринта -->
+<div class="modal fade" id="startSprintModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Запуск спринта</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="startSprintForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Дата начала *</label>
+                                <input type="date" class="form-control" id="startDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">Дата окончания *</label>
+                                <input type="date" class="form-control" id="endDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startCapacity" class="form-label">Capacity (часы)</label>
+                                <input type="number" class="form-control" id="startCapacity" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startVelocity" class="form-label">Velocity (story points)</label>
+                                <input type="number" class="form-control" id="startVelocity" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="startSprintId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success" onclick="startSprint()">
+                    <i class="bi bi-play-circle me-1"></i>Запустить спринт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно завершения спринта -->
+<div class="modal fade" id="completeSprintModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Завершение спринта</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="completeSprintForm">
+                    <div class="mb-3">
+                        <label for="completedPoints" class="form-label">Завершено story points</label>
+                        <input type="number" class="form-control" id="completedPoints" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="retrospectiveNotes" class="form-label">Заметки ретроспективы</label>
+                        <textarea class="form-control" id="retrospectiveNotes" rows="4"
+                                  placeholder="Что прошло хорошо? Что можно улучшить?"></textarea>
+                    </div>
+                    <input type="hidden" id="completeSprintId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-warning" onclick="completeSprint()">
+                    <i class="bi bi-check-circle me-1"></i>Завершить спринт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentProjectId = null;
+let sprints = [];
+
+// Загрузка при инициализации
+document.addEventListener('DOMContentLoaded', function() {
+    loadProjects();
+});
+
+// Загрузка проектов
+async function loadProjects() {
+    try {
+        const response = await fetch('/api/v1/projects');
+        const projects = await response.json();
+
+        const select = document.getElementById('projectSelect');
+        select.innerHTML = '<option value="">Выберите проект...</option>';
+
+        projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.id;
+            option.textContent = project.name;
+            select.appendChild(option);
+        });
+
+        // Выбираем первый проект если есть
+        if (projects.length > 0) {
+            select.value = projects[0].id;
+            currentProjectId = projects[0].id;
+            loadSprints();
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки проектов:', error);
+        showError('Не удалось загрузить проекты');
+    }
+}
+
+// Загрузка спринтов
+async function loadSprints() {
+    const projectId = document.getElementById('projectSelect').value;
+    const showCompleted = document.getElementById('showCompleted').checked;
+
+    if (!projectId) {
+        document.getElementById('sprintsContainer').innerHTML =
+            '<div class="alert alert-info">Выберите проект для просмотра спринтов</div>';
+        return;
+    }
+
+    currentProjectId = projectId;
+
+    try {
+        // Загрузка активного спринта
+        loadActiveSprint(projectId);
+
+        // Загрузка всех спринтов
+        const response = await fetch(`/api/v1/sprints/project/${projectId}?include_completed=${showCompleted}`);
+        sprints = await response.json();
+
+        renderSprints();
+    } catch (error) {
+        console.error('Ошибка загрузки спринтов:', error);
+        showError('Не удалось загрузить спринты');
+    }
+}
+
+// Загрузка активного спринта
+async function loadActiveSprint(projectId) {
+    try {
+        const response = await fetch(`/api/v1/sprints/project/${projectId}/active`);
+        const data = await response.json();
+
+        if (data.message) {
+            document.getElementById('activeSprintContainer').style.display = 'none';
+        } else {
+            renderActiveSprint(data);
+            document.getElementById('activeSprintContainer').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки активного спринта:', error);
+        document.getElementById('activeSprintContainer').style.display = 'none';
+    }
+}
+
+// Отрисовка активного спринта
+function renderActiveSprint(sprint) {
+    const container = document.getElementById('activeSprintContent');
+    const progress = sprint.completion_percentage || 0;
+    const daysLeft = Math.ceil((new Date(sprint.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h6 class="text-success">${sprint.name}</h6>
+                <p class="mb-2">${sprint.goal || 'Без цели'}</p>
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: ${progress}%"></div>
+                </div>
+                <small class="text-muted">
+                    ${sprint.completed_task_count}/${sprint.task_count} задач выполнено (${progress.toFixed(1)}%)
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary btn-sm" onclick="viewSprintDetails('${sprint.id}')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="showCompleteSprintModal('${sprint.id}')">
+                        <i class="bi bi-check-circle"></i>
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="showBurndownChart('${sprint.id}')">
+                        <i class="bi bi-graph-down"></i>
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-event"></i> ${daysLeft > 0 ? daysLeft + ' дней' : 'Завершен сегодня'}
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Отрисовка списка спринтов
+function renderSprints() {
+    const container = document.getElementById('sprintsContainer');
+
+    if (sprints.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-lightning-charge text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 text-muted">Спринты не найдены</h5>
+                <p class="text-muted">Создайте свой первый спринт для этого проекта</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSprintModal">
+                    <i class="bi bi-plus-circle me-1"></i>Создать спринт
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="row">';
+
+    sprints.forEach(sprint => {
+        const statusBadge = getStatusBadge(sprint.status);
+        const progress = sprint.completion_percentage || 0;
+
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">${sprint.name}</h6>
+                        ${statusBadge}
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">${sprint.description || sprint.goal || 'Без описания'}</p>
+
+                        ${sprint.start_date ? `
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar-range"></i>
+                                ${formatDate(sprint.start_date)} - ${formatDate(sprint.end_date)}
+                            </small>
+                        </div>
+                        ` : ''}
+
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <small>Прогресс</small>
+                                <small>${progress.toFixed(1)}%</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <small class="text-muted d-block">Задачи</small>
+                                <strong>${sprint.completed_task_count || 0}/${sprint.task_count || 0}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Points</small>
+                                <strong>${sprint.completed_points || 0}/${sprint.velocity_points || 0}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Capacity</small>
+                                <strong>${sprint.capacity_hours || 0}ч</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-outline-primary btn-sm" onclick="viewSprintDetails('${sprint.id}')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            ${getActionButtons(sprint)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Получение бейджа статуса
+function getStatusBadge(status) {
+    const badges = {
+        'planning': '<span class="badge bg-secondary">Планирование</span>',
+        'active': '<span class="badge bg-success">Активный</span>',
+        'completed': '<span class="badge bg-warning">Завершен</span>',
+        'cancelled': '<span class="badge bg-danger">Отменен</span>'
+    };
+    return badges[status] || '<span class="badge bg-secondary">Неизвестно</span>';
+}
+
+// Получение кнопок действий в зависимости от статуса
+function getActionButtons(sprint) {
+    switch (sprint.status) {
+        case 'planning':
+            return `
+                <button class="btn btn-outline-success btn-sm" onclick="showStartSprintModal('${sprint.id}')">
+                    <i class="bi bi-play-circle"></i>
+                </button>
+                <button class="btn btn-outline-warning btn-sm" onclick="editSprint('${sprint.id}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="cancelSprint('${sprint.id}')">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            `;
+        case 'active':
+            return `
+                <button class="btn btn-outline-warning btn-sm" onclick="showCompleteSprintModal('${sprint.id}')">
+                    <i class="bi bi-check-circle"></i>
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="showBurndownChart('${sprint.id}')">
+                    <i class="bi bi-graph-down"></i>
+                </button>
+            `;
+        case 'completed':
+            return `
+                <button class="btn btn-outline-info btn-sm" onclick="showSprintStats('${sprint.id}')">
+                    <i class="bi bi-bar-chart"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="showBurndownChart('${sprint.id}')">
+                    <i class="bi bi-graph-down"></i>
+                </button>
+            `;
+        default:
+            return '';
+    }
+}
+
+// Создание спринта
+async function createSprint() {
+    const form = document.getElementById('createSprintForm');
+    const formData = new FormData(form);
+
+    const sprintData = {
+        name: document.getElementById('sprintName').value,
+        description: document.getElementById('sprintDescription').value,
+        goal: document.getElementById('sprintGoal').value,
+        capacity_hours: parseInt(document.getElementById('sprintCapacity').value) || null,
+        velocity_points: parseInt(document.getElementById('sprintVelocity').value) || null,
+        project_id: currentProjectId
+    };
+
+    try {
+        const response = await fetch('/api/v1/sprints/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sprintData)
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('createSprintModal')).hide();
+            form.reset();
+            loadSprints();
+            showSuccess('Спринт успешно создан');
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка создания спринта');
+        }
+    } catch (error) {
+        console.error('Ошибка создания спринта:', error);
+        showError('Не удалось создать спринт');
+    }
+}
+
+// Показать модальное окно запуска спринта
+function showStartSprintModal(sprintId) {
+    const sprint = sprints.find(s => s.id === sprintId);
+    if (!sprint) return;
+
+    document.getElementById('startSprintId').value = sprintId;
+    document.getElementById('startCapacity').value = sprint.capacity_hours || '';
+    document.getElementById('startVelocity').value = sprint.velocity_points || '';
+
+    // Устанавливаем даты по умолчанию
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 14); // 2 недели по умолчанию
+
+    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+
+    new bootstrap.Modal(document.getElementById('startSprintModal')).show();
+}
+
+// Запуск спринта
+async function startSprint() {
+    const sprintId = document.getElementById('startSprintId').value;
+
+    const startData = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        capacity_hours: parseInt(document.getElementById('startCapacity').value) || null,
+        velocity_points: parseInt(document.getElementById('startVelocity').value) || null
+    };
+
+    try {
+        const response = await fetch(`/api/v1/sprints/${sprintId}/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(startData)
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('startSprintModal')).hide();
+            loadSprints();
+            showSuccess('Спринт успешно запущен');
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка запуска спринта');
+        }
+    } catch (error) {
+        console.error('Ошибка запуска спринта:', error);
+        showError('Не удалось запустить спринт');
+    }
+}
+
+// Показать модальное окно завершения спринта
+function showCompleteSprintModal(sprintId) {
+    const sprint = sprints.find(s => s.id === sprintId);
+    if (!sprint) return;
+
+    document.getElementById('completeSprintId').value = sprintId;
+    document.getElementById('completedPoints').value = sprint.completed_points || 0;
+    document.getElementById('retrospectiveNotes').value = '';
+
+    new bootstrap.Modal(document.getElementById('completeSprintModal')).show();
+}
+
+// Завершение спринта
+async function completeSprint() {
+    const sprintId = document.getElementById('completeSprintId').value;
+
+    const completeData = {
+        completed_points: parseInt(document.getElementById('completedPoints').value) || 0,
+        retrospective_notes: document.getElementById('retrospectiveNotes').value
+    };
+
+    try {
+        const response = await fetch(`/api/v1/sprints/${sprintId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(completeData)
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('completeSprintModal')).hide();
+            loadSprints();
+            showSuccess('Спринт успешно завершен');
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка завершения спринта');
+        }
+    } catch (error) {
+        console.error('Ошибка завершения спринта:', error);
+        showError('Не удалось завершить спринт');
+    }
+}
+
+// Отмена спринта
+async function cancelSprint(sprintId) {
+    if (!confirm('Вы уверены, что хотите отменить этот спринт?')) return;
+
+    try {
+        const response = await fetch(`/api/v1/sprints/${sprintId}/cancel`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            loadSprints();
+            showSuccess('Спринт отменен');
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка отмены спринта');
+        }
+    } catch (error) {
+        console.error('Ошибка отмены спринта:', error);
+        showError('Не удалось отменить спринт');
+    }
+}
+
+// Просмотр деталей спринта
+function viewSprintDetails(sprintId) {
+    window.location.href = `/sprints/${sprintId}`;
+}
+
+// Показать burndown chart
+function showBurndownChart(sprintId) {
+    window.location.href = `/sprints/${sprintId}/burndown`;
+}
+
+// Показать статистику спринта
+function showSprintStats(sprintId) {
+    window.location.href = `/sprints/${sprintId}/stats`;
+}
+
+// Редактирование спринта (заглушка)
+function editSprint(sprintId) {
+    showInfo('Редактирование спринтов будет доступно в следующей версии');
+}
+
+// Вспомогательные функции
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+}
+
+function showSuccess(message) {
+    // Используем существующую систему уведомлений или создаем простое уведомление
+    alert(message);
+}
+
+function showError(message) {
+    alert('Ошибка: ' + message);
+}
+
+function showInfo(message) {
+    alert(message);
+}
+
+// Установка ID проекта в форме создания
+document.getElementById('createSprintModal').addEventListener('show.bs.modal', function() {
+    document.getElementById('sprintProjectId').value = currentProjectId;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,940 @@
+{% extends "base.html" %}
+
+{% block title %}Планирование спринта - {{ settings.PROJECT_NAME }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        <li class="breadcrumb-item"><a href="/projects">Проекты</a></li>
+        <li class="breadcrumb-item"><a href="/sprints">SCRUM Спринты</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Планирование спринта</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-calendar-week text-primary me-2"></i>
+                Планирование спринта
+            </h1>
+            <div>
+                <button class="btn btn-outline-secondary me-2" onclick="goBack()">
+                    <i class="bi bi-arrow-left me-1"></i>Назад
+                </button>
+                <button class="btn btn-success" onclick="saveSprintPlan()" id="saveButton" style="display: none;">
+                    <i class="bi bi-check-circle me-1"></i>Сохранить план
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Информация о спринте -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0" id="sprintTitle">Загрузка информации о спринте...</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="sprintInfo">
+                            <div class="spinner-border spinner-border-sm me-2"></div>
+                            Загрузка...
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Метрики спринта</h6>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Capacity</small>
+                                        <strong id="capacityDisplay">0ч</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Velocity</small>
+                                        <strong id="velocityDisplay">0</strong>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Задач</small>
+                                        <strong id="tasksCountDisplay">0</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Story Points</small>
+                                        <strong id="storyPointsDisplay">0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backlog и Sprint Board -->
+<div class="row">
+    <!-- Product Backlog -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-task me-2"></i>
+                    Product Backlog
+                    <span class="badge bg-light text-dark ms-2" id="backlogCount">0</span>
+                </h6>
+            </div>
+            <div class="card-body p-2" style="max-height: 600px; overflow-y: auto;">
+                <div class="mb-2">
+                    <input type="text" class="form-control form-control-sm" id="backlogSearch"
+                           placeholder="Поиск задач..." onkeyup="filterBacklog()">
+                </div>
+                <div id="backlogContainer" class="drag-container">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-2">Загрузка backlog...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sprint Backlog -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning-charge me-2"></i>
+                    Sprint Backlog
+                    <span class="badge bg-light text-dark ms-2" id="sprintCount">0</span>
+                </h6>
+            </div>
+            <div class="card-body p-2" style="max-height: 600px; overflow-y: auto;">
+                <div class="alert alert-info alert-sm mb-2">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        Перетащите задачи из Product Backlog в Sprint Backlog
+                    </small>
+                </div>
+                <div id="sprintContainer" class="drag-container">
+                    <div class="text-center py-4">
+                        <i class="bi bi-lightning-charge text-muted" style="font-size: 2rem;"></i>
+                        <p class="mt-2 text-muted">Перетащите задачи сюда</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания задачи -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создание задачи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createTaskForm">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Название задачи *</label>
+                        <input type="text" class="form-control" id="taskTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="taskDescription" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="taskPriority" class="form-label">Приоритет</label>
+                                <select class="form-select" id="taskPriority">
+                                    <option value="low">Низкий</option>
+                                    <option value="medium" selected>Средний</option>
+                                    <option value="high">Высокий</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="taskStoryPoints" class="form-label">Story Points</label>
+                                <select class="form-select" id="taskStoryPoints">
+                                    <option value="">Нет оценки</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="13">13</option>
+                                    <option value="21">21</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="taskProjectId">
+                    <input type="hidden" id="taskSprintId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="createTask()">
+                    <i class="bi bi-plus-circle me-1"></i>Создать задачу
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования задачи -->
+<div class="modal fade" id="editTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактирование задачи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <div class="mb-3">
+                        <label for="editTaskTitle" class="form-label">Название задачи *</label>
+                        <input type="text" class="form-control" id="editTaskTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTaskDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="editTaskDescription" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editTaskPriority" class="form-label">Приоритет</label>
+                                <select class="form-select" id="editTaskPriority">
+                                    <option value="low">Низкий</option>
+                                    <option value="medium">Средний</option>
+                                    <option value="high">Высокий</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editTaskStoryPoints" class="form-label">Story Points</label>
+                                <select class="form-select" id="editTaskStoryPoints">
+                                    <option value="">Нет оценки</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="5">5</option>
+                                    <option value="8">8</option>
+                                    <option value="13">13</option>
+                                    <option value="21">21</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editTaskId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="updateTask()">
+                    <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.drag-container {
+    min-height: 200px;
+}
+
+.task-card {
+    cursor: move;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.task-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.drag-over {
+    background-color: #f8f9fa;
+    border: 2px dashed #007bff;
+    border-radius: 8px;
+}
+
+.priority-high {
+    border-left: 4px solid #dc3545;
+}
+
+.priority-medium {
+    border-left: 4px solid #ffc107;
+}
+
+.priority-low {
+    border-left: 4px solid #28a745;
+}
+
+.story-points-badge {
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.task-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.task-card:hover .task-actions {
+    opacity: 1;
+}
+
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Анимация для drag & drop */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.task-card.new {
+    animation: slideIn 0.3s ease;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSprintId = null;
+let currentProjectId = null;
+let backlogTasks = [];
+let sprintTasks = [];
+let hasChanges = false;
+
+// Получение параметров URL
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        sprintId: params.get('sprint_id'),
+        projectId: params.get('project_id')
+    };
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    const params = getUrlParams();
+    if (params.sprintId && params.projectId) {
+        currentSprintId = params.sprintId;
+        currentProjectId = params.projectId;
+        loadSprintData();
+    } else {
+        showError('Отсутствуют необходимые параметры');
+    }
+});
+
+// Загрузка данных спринта
+async function loadSprintData() {
+    try {
+        // Загрузка информации о спринте
+        const sprintResponse = await fetch(`/api/v1/sprints/${currentSprintId}`);
+        const sprint = await sprintResponse.json();
+
+        renderSprintInfo(sprint);
+
+        // Загрузка задач
+        await Promise.all([
+            loadBacklogTasks(),
+            loadSprintTasks()
+        ]);
+
+        updateMetrics();
+        initializeDragAndDrop();
+
+    } catch (error) {
+        console.error('Ошибка загрузки данных спринта:', error);
+        showError('Не удалось загрузить данные спринта');
+    }
+}
+
+// Отрисовка информации о спринте
+function renderSprintInfo(sprint) {
+    document.getElementById('sprintTitle').textContent = sprint.name;
+
+    const statusBadge = getStatusBadge(sprint.status);
+    const dates = sprint.start_date && sprint.end_date ?
+        `${formatDate(sprint.start_date)} - ${formatDate(sprint.end_date)}` : 'Не запланирован';
+
+    document.getElementById('sprintInfo').innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <p><strong>Цель:</strong> ${sprint.goal || 'Не указана'}</p>
+                <p><strong>Статус:</strong> ${statusBadge}</p>
+                <p><strong>Даты:</strong> ${dates}</p>
+            </div>
+            <div class="col-md-4">
+                <div class="btn-group-vertical w-100">
+                    <button class="btn btn-outline-primary btn-sm" onclick="showCreateTaskModal()">
+                        <i class="bi bi-plus-circle me-1"></i>Новая задача
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="showBurndownChart()">
+                        <i class="bi bi-graph-down me-1"></i>Burndown
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Обновляем метрики
+    document.getElementById('capacityDisplay').textContent = `${sprint.capacity_hours || 0}ч`;
+    document.getElementById('velocityDisplay').textContent = sprint.velocity_points || 0;
+}
+
+// Загрузка задач из Product Backlog
+async function loadBacklogTasks() {
+    try {
+        const response = await fetch(`/api/v1/projects/${currentProjectId}/tasks`);
+        const allTasks = await response.json();
+
+        // Исключаем задачи уже в спринте
+        const sprintTaskIds = sprintTasks.map(st => st.task_id);
+        backlogTasks = allTasks.filter(task => !sprintTaskIds.includes(task.id));
+
+        renderBacklogTasks();
+    } catch (error) {
+        console.error('Ошибка загрузки backlog:', error);
+        document.getElementById('backlogContainer').innerHTML =
+            '<div class="alert alert-danger">Не удалось загрузить задачи</div>';
+    }
+}
+
+// Загрузка задач спринта
+async function loadSprintTasks() {
+    try {
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}/tasks`);
+        sprintTasks = await response.json();
+
+        renderSprintTasks();
+    } catch (error) {
+        console.error('Ошибка загрузки задач спринта:', error);
+        document.getElementById('sprintContainer').innerHTML =
+            '<div class="alert alert-danger">Не удалось загрузить задачи спринта</div>';
+    }
+}
+
+// Отрисовка задач в Product Backlog
+function renderBacklogTasks() {
+    const container = document.getElementById('backlogContainer');
+    document.getElementById('backlogCount').textContent = backlogTasks.length;
+
+    if (backlogTasks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                <p class="mt-2">Все задачи в спринте</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = backlogTasks.map(task => createTaskCard(task, 'backlog')).join('');
+}
+
+// Отрисовка задач в Sprint Backlog
+function renderSprintTasks() {
+    const container = document.getElementById('sprintContainer');
+    document.getElementById('sprintCount').textContent = sprintTasks.length;
+
+    if (sprintTasks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-lightning-charge" style="font-size: 2rem;"></i>
+                <p class="mt-2">Перетащите задачи сюда</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = sprintTasks.map(sprintTask => {
+        const task = sprintTask.task;
+        return createTaskCard(task, 'sprint', sprintTask);
+    }).join('');
+}
+
+// Создание карточки задачи
+function createTaskCard(task, type, sprintTask = null) {
+    const priorityClass = `priority-${task.priority}`;
+    const storyPoints = task.story_points ?
+        `<span class="badge bg-primary story-points-badge">${task.story_points}</span>` : '';
+
+    const taskId = type === 'sprint' ? sprintTask.id : task.id;
+    const draggable = type === 'backlog' ? 'draggable="true"' : '';
+
+    return `
+        <div class="card task-card ${priorityClass} ${type === 'sprint' ? 'new' : ''}"
+             data-task-id="${task.id}"
+             data-sprint-task-id="${taskId}"
+             ${draggable}>
+            <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-1">${task.title}</h6>
+                        ${task.description ? `<p class="card-text small text-muted">${task.description.substring(0, 100)}...</p>` : ''}
+                        <div class="d-flex align-items-center">
+                            ${storyPoints}
+                            <small class="text-muted ms-2">
+                                <i class="bi bi-flag"></i> ${getPriorityText(task.priority)}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="editTask('${task.id}')" title="Редактировать">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            ${type === 'sprint' ? `
+                            <button class="btn btn-outline-danger" onclick="removeFromSprint('${taskId}')" title="Удалить из спринта">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Инициализация Drag & Drop
+function initializeDragAndDrop() {
+    const taskCards = document.querySelectorAll('.task-card[draggable="true"]');
+    const containers = document.querySelectorAll('.drag-container');
+
+    taskCards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+    });
+
+    containers.forEach(container => {
+        container.addEventListener('dragover', handleDragOver);
+        container.addEventListener('drop', handleDrop);
+        container.addEventListener('dragleave', handleDragLeave);
+    });
+}
+
+// Drag & Drop обработчики
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = e.target;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.innerHTML);
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+
+    // Убираем подсветку со всех контейнеров
+    document.querySelectorAll('.drag-over').forEach(container => {
+        container.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+
+    return false;
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
+
+async function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+
+    e.currentTarget.classList.remove('drag-over');
+
+    if (!draggedElement) return;
+
+    const taskId = draggedElement.dataset.taskId;
+    const targetContainer = e.currentTarget;
+
+    // Определяем тип контейнера
+    if (targetContainer.id === 'sprintContainer') {
+        // Добавление в спринт
+        await addToSprint(taskId);
+    } else if (targetContainer.id === 'backlogContainer') {
+        // Удаление из спринта
+        const sprintTaskId = draggedElement.dataset.sprintTaskId;
+        if (sprintTaskId) {
+            await removeFromSprint(sprintTaskId);
+        }
+    }
+
+    return false;
+}
+
+// Добавление задачи в спринт
+async function addToSprint(taskId) {
+    try {
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}/tasks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                task_id: taskId,
+                order: sprintTasks.length + 1,
+                is_added_mid_sprint: false
+            })
+        });
+
+        if (response.ok) {
+            const sprintTask = await response.json();
+            const task = backlogTasks.find(t => t.id === taskId);
+
+            if (task) {
+                // Добавляем в sprint tasks
+                sprintTasks.push({
+                    ...sprintTask,
+                    task: task
+                });
+
+                // Удаляем из backlog
+                backlogTasks = backlogTasks.filter(t => t.id !== taskId);
+
+                // Перерисовываем
+                renderBacklogTasks();
+                renderSprintTasks();
+                updateMetrics();
+                initializeDragAndDrop();
+
+                markAsChanged();
+                showSuccess('Задача добавлена в спринт');
+            }
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка добавления задачи в спринт');
+        }
+    } catch (error) {
+        console.error('Ошибка добавления задачи в спринт:', error);
+        showError('Не удалось добавить задачу в спринт');
+    }
+}
+
+// Удаление задачи из спринта
+async function removeFromSprint(sprintTaskId) {
+    if (!confirm('Удалить задачу из спринта?')) return;
+
+    try {
+        const response = await fetch(`/api/v1/sprints/${currentSprintId}/tasks/${sprintTaskId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            const sprintTask = sprintTasks.find(st => st.id === sprintTaskId);
+
+            if (sprintTask) {
+                // Добавляем в backlog
+                backlogTasks.push(sprintTask.task);
+
+                // Удаляем из sprint tasks
+                sprintTasks = sprintTasks.filter(st => st.id !== sprintTaskId);
+
+                // Перерисовываем
+                renderBacklogTasks();
+                renderSprintTasks();
+                updateMetrics();
+                initializeDragAndDrop();
+
+                markAsChanged();
+                showSuccess('Задача удалена из спринта');
+            }
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка удаления задачи из спринта');
+        }
+    } catch (error) {
+        console.error('Ошибка удаления задачи из спринта:', error);
+        showError('Не удалось удалить задачу из спринта');
+    }
+}
+
+// Обновление метрик
+function updateMetrics() {
+    const totalStoryPoints = sprintTasks.reduce((sum, st) =>
+        sum + (st.task.story_points || 0), 0);
+
+    document.getElementById('tasksCountDisplay').textContent = sprintTasks.length;
+    document.getElementById('storyPointsDisplay').textContent = totalStoryPoints;
+}
+
+// Фильтрация backlog
+function filterBacklog() {
+    const searchTerm = document.getElementById('backlogSearch').value.toLowerCase();
+    const filteredTasks = backlogTasks.filter(task =>
+        task.title.toLowerCase().includes(searchTerm) ||
+        (task.description && task.description.toLowerCase().includes(searchTerm))
+    );
+
+    const container = document.getElementById('backlogContainer');
+
+    if (filteredTasks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-search" style="font-size: 2rem;"></i>
+                <p class="mt-2">Задачи не найдены</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filteredTasks.map(task => createTaskCard(task, 'backlog')).join('');
+    initializeDragAndDrop();
+}
+
+// Показать модальное окно создания задачи
+function showCreateTaskModal() {
+    document.getElementById('taskProjectId').value = currentProjectId;
+    document.getElementById('taskSprintId').value = currentSprintId;
+    document.getElementById('createTaskForm').reset();
+
+    new bootstrap.Modal(document.getElementById('createTaskModal')).show();
+}
+
+// Создание задачи
+async function createTask() {
+    const taskData = {
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDescription').value,
+        priority: document.getElementById('taskPriority').value,
+        story_points: parseInt(document.getElementById('taskStoryPoints').value) || null,
+        project_id: currentProjectId
+    };
+
+    try {
+        const response = await fetch('/api/v1/tasks/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(taskData)
+        });
+
+        if (response.ok) {
+            const task = await response.json();
+
+            // Добавляем в backlog
+            backlogTasks.push(task);
+            renderBacklogTasks();
+            initializeDragAndDrop();
+
+            bootstrap.Modal.getInstance(document.getElementById('createTaskModal')).hide();
+            showSuccess('Задача создана');
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка создания задачи');
+        }
+    } catch (error) {
+        console.error('Ошибка создания задачи:', error);
+        showError('Не удалось создать задачу');
+    }
+}
+
+// Редактирование задачи
+async function editTask(taskId) {
+    try {
+        // Находим задачу
+        let task = backlogTasks.find(t => t.id === taskId);
+        if (!task) {
+            const sprintTask = sprintTasks.find(st => st.task.id === taskId);
+            task = sprintTask ? sprintTask.task : null;
+        }
+
+        if (!task) {
+            showError('Задача не найдена');
+            return;
+        }
+
+        // Заполняем форму
+        document.getElementById('editTaskId').value = task.id;
+        document.getElementById('editTaskTitle').value = task.title;
+        document.getElementById('editTaskDescription').value = task.description || '';
+        document.getElementById('editTaskPriority').value = task.priority;
+        document.getElementById('editTaskStoryPoints').value = task.story_points || '';
+
+        new bootstrap.Modal(document.getElementById('editTaskModal')).show();
+    } catch (error) {
+        console.error('Ошибка редактирования задачи:', error);
+        showError('Не удалось загрузить задачу для редактирования');
+    }
+}
+
+// Обновление задачи
+async function updateTask() {
+    const taskId = document.getElementById('editTaskId').value;
+
+    const taskData = {
+        title: document.getElementById('editTaskTitle').value,
+        description: document.getElementById('editTaskDescription').value,
+        priority: document.getElementById('editTaskPriority').value,
+        story_points: parseInt(document.getElementById('editTaskStoryPoints').value) || null
+    };
+
+    try {
+        const response = await fetch(`/api/v1/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(taskData)
+        });
+
+        if (response.ok) {
+            const updatedTask = await response.json();
+
+            // Обновляем в backlog
+            const backlogIndex = backlogTasks.findIndex(t => t.id === taskId);
+            if (backlogIndex !== -1) {
+                backlogTasks[backlogIndex] = updatedTask;
+                renderBacklogTasks();
+            }
+
+            // Обновляем в sprint tasks
+            const sprintIndex = sprintTasks.findIndex(st => st.task.id === taskId);
+            if (sprintIndex !== -1) {
+                sprintTasks[sprintIndex].task = updatedTask;
+                renderSprintTasks();
+            }
+
+            updateMetrics();
+            initializeDragAndDrop();
+
+            bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
+            showSuccess('Задача обновлена');
+        } else {
+            const error = await response.json();
+            showError(error.detail || 'Ошибка обновления задачи');
+        }
+    } catch (error) {
+        console.error('Ошибка обновления задачи:', error);
+        showError('Не удалось обновить задачу');
+    }
+}
+
+// Сохранение плана спринта
+function saveSprintPlan() {
+    // Здесь можно добавить дополнительную логику сохранения
+    showSuccess('План спринта сохранен');
+    markAsUnchanged();
+}
+
+// Пометить как измененный
+function markAsChanged() {
+    hasChanges = true;
+    document.getElementById('saveButton').style.display = 'inline-block';
+}
+
+// Пометить как неизмененный
+function markAsUnchanged() {
+    hasChanges = false;
+    document.getElementById('saveButton').style.display = 'none';
+}
+
+// Показать burndown chart
+function showBurndownChart() {
+    window.location.href = `/sprints/${currentSprintId}/burndown`;
+}
+
+// Вспомогательные функции
+function getStatusBadge(status) {
+    const badges = {
+        'planning': '<span class="badge bg-secondary">Планирование</span>',
+        'active': '<span class="badge bg-success">Активный</span>',
+        'completed': '<span class="badge bg-warning">Завершен</span>',
+        'cancelled': '<span class="badge bg-danger">Отменен</span>'
+    };
+    return badges[status] || '<span class="badge bg-secondary">Неизвестно</span>';
+}
+
+function getPriorityText(priority) {
+    const priorities = {
+        'low': 'Низкий',
+        'medium': 'Средний',
+        'high': 'Высокий'
+    };
+    return priorities[priority] || priority;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+}
+
+function goBack() {
+    if (hasChanges) {
+        if (confirm('Есть несохраненные изменения. Выйти без сохранения?')) {
+            window.history.back();
+        }
+    } else {
+        window.history.back();
+    }
+}
+
+function showSuccess(message) {
+    alert(message);
+}
+
+function showError(message) {
+    alert('Ошибка: ' + message);
+}
+
+// Предупреждение при уходе со страницы
+window.addEventListener('beforeunload', function(e) {
+    if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = 'Есть несохраненные изменения. Вы уверены, что хотите уйти?';
+    }
+});
+</script>
+{% endblock %}

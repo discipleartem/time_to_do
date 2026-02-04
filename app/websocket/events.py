@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 class EventType(str, Enum):
@@ -60,7 +60,9 @@ class WebSocketEvent(BaseModel):
     user_id: UUID | None = Field(None, description="ID пользователя (если применимо)")
     timestamp: str | None = Field(None, description="Временная метка ISO 8601")
 
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
+    @field_serializer("user_id")
+    def serialize_user_id(self, value: UUID | None) -> str | None:
+        return str(value) if value is not None else None
 
 
 class TaskEvent(BaseModel):
@@ -73,7 +75,9 @@ class TaskEvent(BaseModel):
     assignee_id: UUID | None = Field(None, description="ID исполнителя")
     story_points: int | None = Field(None, description="Story points")
 
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
+    @field_serializer("task_id", "assignee_id")
+    def serialize_uuids(self, value: UUID | None) -> str | None:
+        return str(value) if value is not None else None
 
 
 class CommentEvent(BaseModel):
@@ -85,7 +89,9 @@ class CommentEvent(BaseModel):
     content: str = Field(..., description="Содержание комментария")
     author_id: UUID = Field(..., description="ID автора")
 
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
+    @field_serializer("comment_id", "task_id", "author_id")
+    def serialize_uuids(self, value: UUID) -> str:
+        return str(value)
 
 
 class ProjectEvent(BaseModel):
@@ -94,8 +100,6 @@ class ProjectEvent(BaseModel):
     project_id: str = Field(..., description="ID проекта")
     name: str = Field(..., description="Название проекта")
     description: str | None = Field(None, description="Описание проекта")
-
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
 
 
 class SprintEvent(BaseModel):
@@ -106,7 +110,9 @@ class SprintEvent(BaseModel):
     name: str = Field(..., description="Название спринта")
     status: str = Field(..., description="Статус спринта")
 
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
+    @field_serializer("sprint_id")
+    def serialize_sprint_id(self, value: UUID) -> str:
+        return str(value)
 
 
 class TimeEvent(BaseModel):
@@ -117,7 +123,9 @@ class TimeEvent(BaseModel):
     duration_seconds: int | None = Field(None, description="Длительность в секундах")
     user_id: UUID = Field(..., description="ID пользователя")
 
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
+    @field_serializer("task_id", "user_id")
+    def serialize_uuids(self, value: UUID) -> str:
+        return str(value)
 
 
 class UserEvent(BaseModel):
@@ -127,7 +135,9 @@ class UserEvent(BaseModel):
     username: str = Field(..., description="Имя пользователя")
     status: str = Field(..., description="Статус (online/offline)")
 
-    model_config = ConfigDict(json_encoders={UUID: lambda v: str(v)})
+    @field_serializer("user_id")
+    def serialize_user_id(self, value: UUID) -> str:
+        return str(value)
 
 
 class ErrorEvent(BaseModel):

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru" data-bs-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
 
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
     <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -40,6 +42,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="/sprints">
+                            <i class="bi bi-lightning-charge me-1"></i>Спринты
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/reports">
                             <i class="bi bi-graph-up me-1"></i>Отчеты
                         </a>
@@ -56,15 +63,17 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/profile">
-                                <i class="bi bi-person me-2"></i>Профиль
-                            </a></li>
+                                    <i class="bi bi-person me-2"></i>Профиль
+                                </a></li>
                             <li><a class="dropdown-item" href="/settings">
-                                <i class="bi bi-gear me-2"></i>Настройки
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
+                                    <i class="bi bi-gear me-2"></i>Настройки
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><a class="dropdown-item" href="/api/v1/auth/logout">
-                                <i class="bi bi-box-arrow-right me-2"></i>Выйти
-                            </a></li>
+                                    <i class="bi bi-box-arrow-right me-2"></i>Выйти
+                                </a></li>
                         </ul>
                     </li>
                     {% else %}
@@ -133,4 +142,5 @@
 
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

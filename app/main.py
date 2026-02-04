@@ -134,6 +134,42 @@ async def project_kanban(request: Request, project_id: str) -> HTMLResponse:
     )
 
 
+@app.get("/sprints", response_class=HTMLResponse)
+async def sprints_page(request: Request) -> HTMLResponse:
+    """
+    Страница управления SCRUM спринтами
+    """
+    return templates.TemplateResponse(
+        request,
+        "sprints.html",
+        {"settings": settings},
+    )
+
+
+@app.get("/sprints/plan", response_class=HTMLResponse)
+async def sprint_plan_page(request: Request) -> HTMLResponse:
+    """
+    Страница планирования спринта
+    """
+    return templates.TemplateResponse(
+        request,
+        "sprint_plan.html",
+        {"settings": settings},
+    )
+
+
+@app.get("/sprints/{sprint_id}/burndown", response_class=HTMLResponse)
+async def sprint_burndown_page(request: Request, sprint_id: str) -> HTMLResponse:
+    """
+    Страница burndown chart для спринта
+    """
+    return templates.TemplateResponse(
+        request,
+        "sprint_burndown.html",
+        {"settings": settings},
+    )
+
+
 # Exception handlers
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(

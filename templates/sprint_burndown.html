@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+
+{% block title %}Burndown Chart - {{ settings.PROJECT_NAME }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        <li class="breadcrumb-item"><a href="/projects">Проекты</a></li>
+        <li class="breadcrumb-item"><a href="/sprints">SCRUM Спринты</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Burndown Chart</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-graph-down text-primary me-2"></i>
+                Burndown Chart
+            </h1>
+            <div>
+                <button class="btn btn-outline-secondary me-2" onclick="goBack()">
+                    <i class="bi bi-arrow-left me-1"></i>Назад
+                </button>
+                <button class="btn btn-outline-primary me-2" onclick="refreshBurndown()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Обновить
+                </button>
+                <button class="btn btn-outline-info" onclick="exportChart()">
+                    <i class="bi bi-download me-1"></i>Экспорт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Информация о спринте -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0" id="sprintTitle">Загрузка информации о спринте...</h5>
+            </div>
+            <div class="card-body">
+                <div class="row" id="sprintInfo">
+                    <div class="col-md-8">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        Загрузка...
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Ключевые метрики</h6>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Всего SP</small>
+                                        <strong id="totalPointsDisplay">0</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Осталось SP</small>
+                                        <strong id="remainingPointsDisplay">0</strong>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Дней прошло</small>
+                                        <strong id="daysPassedDisplay">0</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Дней осталось</small>
+                                        <strong id="daysRemainingDisplay">0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Burndown Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-down me-2"></i>
+                    График выполнения спринта
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5" id="chartContainer">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка данных для графика...</p>
+                </div>
+                <canvas id="burndownChart" style="display: none; max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика и прогнозы -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Текущая скорость
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="velocityInfo">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        Загрузка...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Прогноз завершения
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="forecastInfo">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        Загрузка...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Детальная таблица данных -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-table me-2"></i>
+                    Детальные данные
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm" id="dataTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Идеально осталось</th>
+                                <th>Фактически осталось</th>
+                                <th>Разница</th>
+                                <th>Прогресс</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <!-- Данные будут добавлены через JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="text-center py-3" id="tableLoading">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        Загрузка данных таблицы...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+.metric-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.status-on-track {
+    background-color: #28a745;
+}
+
+.status-at-risk {
+    background-color: #ffc107;
+}
+
+.status-off-track {
+    background-color: #dc3545;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.progress-cell {
+    min-width: 100px;
+}
+
+.difference-positive {
+    color: #28a745;
+}
+
+.difference-negative {
+    color: #dc3545;
+}
+
+.difference-neutral {
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let currentSprintId = null;
+let burndownChart = null;
+let burndownData = null;
+
+// Получение параметров URL
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        sprintId: params.get('sprint_id')
+    };
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    const params = getUrlParams();
+    if (params.sprintId) {
+        currentSprintId = params.sprintId;
+        loadBurndownData();
+    } else {
+        showError('Отсутствует ID спринта');
+    }
+});
+
+// Загрузка данных burndown
+async function loadBurndownData() {
+    try {
+        // Загрузка информации о спринте
+        const sprintResponse = await fetch(`/api/v1/sprints/${currentSprintId}`);
+        const sprint = await sprintResponse.json();
+
+        renderSprintInfo(sprint);
+
+        // Загрузка burndown данных
+        const burndownResponse = await fetch(`/api/v1/sprints/${currentSprintId}/burndown`);
+        burndownData = await burndownResponse.json();
+
+        renderBurndownChart();
+        renderStatistics();
+        renderDataTable();
+
+    } catch (error) {
+        console.error('Ошибка загрузки burndown данных:', error);
+        showError('Не удалось загрузить данные для графика');
+    }
+}
+
+// Отрисовка информации о спринте
+function renderSprintInfo(sprint) {
+    document.getElementById('sprintTitle').textContent = `Burndown Chart: ${sprint.name}`;
+
+    const statusBadge = getStatusBadge(sprint.status);
+    const dates = sprint.start_date && sprint.end_date ?
+        `${formatDate(sprint.start_date)} - ${formatDate(sprint.end_date)}` : 'Не запланирован';
+
+    document.getElementById('sprintInfo').innerHTML = `
+        <div class="col-md-8">
+            <p><strong>Цель:</strong> ${sprint.goal || 'Не указана'}</p>
+            <p><strong>Статус:</strong> ${statusBadge}</p>
+            <p><strong>Даты:</strong> ${dates}</p>
+            <p><strong>Емкость:</strong> ${sprint.capacity_hours || 0} часов</p>
+        </div>
+        <div class="col-md-4">
+            <div class="btn-group-vertical w-100">
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshBurndown()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Обновить данные
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="showSprintStats()">
+                    <i class="bi bi-bar-chart me-1"></i>Статистика спринта
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="goToSprintPlan()">
+                    <i class="bi bi-calendar-week me-1"></i>Планирование
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Отрисовка burndown chart
+function renderBurndownChart() {
+    if (!burndownData || !burndownData.data || burndownData.data.length === 0) {
+        document.getElementById('chartContainer').innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Недостаточно данных для построения графика. Спринт только начался или еще не имеет завершенных задач.
+            </div>
+        `;
+        return;
+    }
+
+    // Скрываем индикатор загрузки
+    document.getElementById('chartContainer').style.display = 'none';
+    document.getElementById('burndownChart').style.display = 'block';
+
+    const ctx = document.getElementById('burndownChart').getContext('2d');
+
+    // Подготовка данных
+    const labels = burndownData.data.map(item => formatDate(item.date));
+    const idealData = burndownData.data.map(item => item.ideal_remaining);
+    const actualData = burndownData.data.map(item => item.actual_remaining);
+
+    // Уничтожаем предыдущий график если есть
+    if (burndownChart) {
+        burndownChart.destroy();
+    }
+
+    // Создаем новый график
+    burndownChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Идеальная линия',
+                    data: idealData,
+                    borderColor: '#6c757d',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Фактическая линия',
+                    data: actualData,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Burndown Chart - Прогресс выполнения спринта'
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += Math.round(context.parsed.y) + ' SP';
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Дата'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Story Points'
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Обновляем метрики
+    updateMetrics();
+}
+
+// Обновление метрик
+function updateMetrics() {
+    if (!burndownData || !burndownData.data || burndownData.data.length === 0) {
+        return;
+    }
+
+    const totalPoints = burndownData.total_story_points || 0;
+    const latestData = burndownData.data[burndownData.data.length - 1];
+    const remainingPoints = Math.round(latestData.actual_remaining);
+
+    // Расчет дней
+    const startDate = new Date(burndownData.start_date);
+    const endDate = new Date(burndownData.end_date);
+    const today = new Date();
+
+    const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    const daysPassed = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, totalDays - daysPassed);
+
+    document.getElementById('totalPointsDisplay').textContent = totalPoints;
+    document.getElementById('remainingPointsDisplay').textContent = remainingPoints;
+    document.getElementById('daysPassedDisplay').textContent = Math.max(0, daysPassed);
+    document.getElementById('daysRemainingDisplay').textContent = daysRemaining;
+}
+
+// Отрисовка статистики
+function renderStatistics() {
+    if (!burndownData || !burndownData.data || burndownData.data.length < 2) {
+        document.getElementById('velocityInfo').innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Недостаточно данных для расчета статистики
+            </div>
+        `;
+        document.getElementById('forecastInfo').innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Недостаточно данных для прогноза
+            </div>
+        `;
+        return;
+    }
+
+    // Расчет скорости
+    const data = burndownData.data;
+    const firstDay = data[0];
+    const lastDay = data[data.length - 1];
+    const daysBetween = Math.ceil((new Date(lastDay.date) - new Date(firstDay.date)) / (1000 * 60 * 60 * 24));
+
+    const pointsBurned = firstDay.actual_remaining - lastDay.actual_remaining;
+    const dailyVelocity = daysBetween > 0 ? pointsBurned / daysBetween : 0;
+
+    // Прогноз
+    const remainingPoints = lastDay.actual_remaining;
+    const daysToComplete = dailyVelocity > 0 ? Math.ceil(remainingPoints / dailyVelocity) : Infinity;
+
+    const endDate = new Date(burndownData.end_date);
+    const forecastedEndDate = new Date();
+    forecastedEndDate.setDate(forecastedEndDate.getDate() + daysToComplete);
+
+    const isOnTrack = forecastedEndDate <= endDate;
+    const statusClass = isOnTrack ? 'status-on-track' : 'status-off-track';
+    const statusText = isOnTrack ? 'На графике' : 'Опаздывает';
+
+    // Отрисовка скорости
+    document.getElementById('velocityInfo').innerHTML = `
+        <div class="metric-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-value">${dailyVelocity.toFixed(1)}</div>
+                    <div class="metric-label">SP в день</div>
+                </div>
+                <div class="text-end">
+                    <div class="metric-value">${pointsBurned}</div>
+                    <div class="metric-label">SP выполнено</div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <small class="text-muted">
+                Средняя скорость выполнения за последние ${daysBetween} дней
+            </small>
+        </div>
+    `;
+
+    // Отрисовка прогноза
+    document.getElementById('forecastInfo').innerHTML = `
+        <div class="alert ${isOnTrack ? 'alert-success' : 'alert-warning'}">
+            <div class="d-flex align-items-center mb-2">
+                <span class="status-indicator ${statusClass}"></span>
+                <strong>${statusText}</strong>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <small class="text-muted d-block">План завершения:</small>
+                    <strong>${formatDate(burndownData.end_date)}</strong>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted d-block">Прогноз:</small>
+                    <strong>${daysToComplete === Infinity ? 'Невозможно определить' : formatDate(forecastedEndDate.toISOString())}</strong>
+                </div>
+            </div>
+        </div>
+        ${!isOnTrack ? `
+        <div class="mt-2">
+            <small class="text-danger">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Требуется ускорение на ${Math.ceil((remainingPoints / Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24))) - dailyVelocity) * 100 / dailyVelocity}% для завершения в срок
+            </small>
+        </div>
+        ` : ''}
+    `;
+}
+
+// Отрисовка таблицы данных
+function renderDataTable() {
+    if (!burndownData || !burndownData.data || burndownData.data.length === 0) {
+        document.getElementById('tableLoading').innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Недостаточно данных для таблицы
+            </div>
+        `;
+        return;
+    }
+
+    document.getElementById('tableLoading').style.display = 'none';
+    document.getElementById('dataTable').style.display = 'table';
+
+    const tbody = document.getElementById('dataTableBody');
+    tbody.innerHTML = '';
+
+    burndownData.data.forEach((item, index) => {
+        const difference = item.ideal_remaining - item.actual_remaining;
+        const differenceClass = difference > 0 ? 'difference-positive' :
+                                 difference < 0 ? 'difference-negative' : 'difference-neutral';
+        const differenceIcon = difference > 0 ? '↑' :
+                              difference < 0 ? '↓' : '→';
+
+        const progress = burndownData.total_story_points > 0 ?
+            ((burndownData.total_story_points - item.actual_remaining) / burndownData.total_story_points * 100) : 0;
+
+        const row = `
+            <tr>
+                <td>${formatDate(item.date)}</td>
+                <td>${Math.round(item.ideal_remaining)}</td>
+                <td>${Math.round(item.actual_remaining)}</td>
+                <td class="${differenceClass}">
+                    ${differenceIcon} ${Math.abs(Math.round(difference))}
+                </td>
+                <td>
+                    <div class="progress progress-cell">
+                        <div class="progress-bar" style="width: ${progress}%"></div>
+                        <small class="ms-2">${progress.toFixed(1)}%</small>
+                    </div>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+// Обновление burndown
+function refreshBurndown() {
+    loadBurndownData();
+    showSuccess('Данные обновлены');
+}
+
+// Экспорт графика
+function exportChart() {
+    if (!burndownChart) {
+        showError('Нет данных для экспорта');
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.download = `burndown-${currentSprintId}-${new Date().toISOString().split('T')[0]}.png`;
+    link.href = burndownChart.toBase64Image();
+    link.click();
+
+    showSuccess('График экспортирован');
+}
+
+// Навигация
+function goBack() {
+    window.history.back();
+}
+
+function showSprintStats() {
+    window.location.href = `/sprints/${currentSprintId}/stats`;
+}
+
+function goToSprintPlan() {
+    window.location.href = `/sprints/plan?sprint_id=${currentSprintId}`;
+}
+
+// Вспомогательные функции
+function getStatusBadge(status) {
+    const badges = {
+        'planning': '<span class="badge bg-secondary">Планирование</span>',
+        'active': '<span class="badge bg-success">Активный</span>',
+        'completed': '<span class="badge bg-warning">Завершен</span>',
+        'cancelled': '<span class="badge bg-danger">Отменен</span>'
+    };
+    return badges[status] || '<span class="badge bg-secondary">Неизвестно</span>';
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+}
+
+function showSuccess(message) {
+    alert(message);
+}
+
+function showError(message) {
+    alert('Ошибка: ' + message);
+}
+</script>
+{% endblock %}
