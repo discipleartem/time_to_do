@@ -1,6 +1,6 @@
 # Makefile for Time to DO
 
-.PHONY: setup dev dev-frontend test test-setup lint clean migrate migrate-down migration reset-db docker-dev docker-prod docker-up docker-stop docker-restart docker-logs docker-build docker-build-clean docker-images docker-clean render-deploy render-status shell db-shell redis-shell help
+.PHONY: setup dev dev-frontend test test-setup lint clean migrate migrate-down migration reset-db docker-dev docker-prod docker-up docker-stop docker-restart docker-logs docker-build docker-build-clean docker-images docker-clean render-deploy render-status shell db-shell redis-shell help docs
 
 # =============================================================================
 # 🚀 УСТАНОВКА И НАСТРОЙКА
@@ -27,7 +27,23 @@ dev-frontend:
 
 shell:
 	@echo "🐍 Запуск Python shell с моделями..."
-	.venv/bin/python -i -c "from app.core.database import get_db_session; from app.models import *; print(' Ready to work with database!')"
+	.venv/bin/python -i -c "from app.core.database import get_db_session; from app.models import *; print('Ready to work with database!')"
+
+# =============================================================================
+# 📚 ДОКУМЕНТАЦИЯ
+# =============================================================================
+
+docs:
+	@echo "📚 Документация проекта Time to DO:"
+	@echo "  📖 README.md - Обзор проекта"
+	@echo "  📋 CURRENT_STATUS.md - Текущий статус"
+	@echo "  🏗️ docs/technical/ - Техническая документация"
+	@echo "    - API.md - API документация"
+	@echo "    - ARCHITECTURE.md - Архитектура"
+	@    - NOTIFICATIONS.md - Система уведомлений"
+	@echo "  📋 docs/development/ - Руководство для разработки"
+	@echo "    - DEVELOPMENT.md - Руководство разработчика"
+	echo "  🌐 Документация доступна на http://localhost:8000/docs"
 
 db-shell:
 	@echo "🗄️ PostgreSQL shell..."

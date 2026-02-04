@@ -21,6 +21,7 @@ from app.schemas.notification import (
     TaskAssignedNotification,
     TaskCompletedNotification,
 )
+from app.services.notification_websocket_integration import notify_user_websocket
 
 
 class NotificationService:
@@ -38,7 +39,43 @@ class NotificationService:
         self.db.add(notification)
         await self.db.commit()
         await self.db.refresh(notification)
+
+        # Отправляем уведомление через WebSocket
+        try:
+            await notify_user_websocket(notification)
+        except Exception as e:
+            # Логируем ошибку, но не прерываем создание уведомления
+            print(f"Ошибка отправки уведомления через WebSocket: {e}")
+
         return notification
+
+    async def create_user_notification(
+        self,
+        user_id: UUID,
+        title: str,
+        message: str,
+        notification_type: str,
+        project_id: UUID | None = None,
+        task_id: UUID | None = None,
+        sprint_id: UUID | None = None,
+        action_url: str | None = None,
+        metadata_json: dict | None = None,
+    ) -> Notification:
+        """Создание уведомления пользователя с удобными параметрами."""
+        import json
+
+        notification_data = NotificationCreate(
+            user_id=user_id,
+            title=title,
+            message=message,
+            notification_type=notification_type,
+            project_id=project_id,
+            task_id=task_id,
+            sprint_id=sprint_id,
+            action_url=action_url,
+            metadata_json=json.dumps(metadata_json) if metadata_json else None,
+        )
+        return await self.create_notification(notification_data)
 
     async def get_user_notifications(
         self,
@@ -149,16 +186,12 @@ class NotificationService:
 
     async def get_unread_count(self, user_id: UUID) -> int:
         """Получить количество непрочитанных уведомлений."""
-        query = (
-            select(Notification)
-            .where(
-                Notification.user_id == user_id,  # type: ignore[arg-type]
-                Notification.is_read == False,  # type: ignore[arg-type]
-            )
-            .with_for_update()
+        query = select(func.count(Notification.id)).where(
+            Notification.user_id == user_id,  # type: ignore[arg-type]
+            Notification.is_read == False,  # type: ignore[arg-type]
         )
         result = await self.db.execute(query)
-        return result.scalar() or 0  # type: ignore[return-value]
+        return result.scalar() or 0
 
     async def get_notification_stats(self, user_id: UUID) -> NotificationStats:
         """Получить статистику уведомлений пользователя."""

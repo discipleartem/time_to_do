@@ -1,14 +1,156 @@
 # API документация Time to DO
 
-## � Обзор
+## 📋 Обзор
 
-Time to DO предоставляет RESTful API для управления задачами, проектами и пользователями. API построен на FastAPI с автоматической документацией Swagger/OpenAPI.
+Time to DO предоставляет RESTful API для управления задачами, проектами, пользователями и уведомлениями. API построен на FastAPI с автоматической документацией Swagger/OpenAPI.
 
 **Базовый URL:** `http://localhost:8000/api/v1`
 
 **Документация:**
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+
+---
+
+## 🔔 Уведомления
+
+### Получение уведомлений
+```bash
+GET /api/v1/notifications/
+```
+
+**Параметры запроса:**
+- `unread_only` (bool): Только непрочитанные
+- `notification_type` (string): Фильтр по типу
+- `limit` (int): Лимит записей (по умолчанию 50)
+- `offset` (int): Смещение (по умолчанию 0)
+
+**Пример ответа:**
+```json
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "title": "Новая задача",
+      "message": "Вам назначена новая задача",
+      "notification_type": "task_assigned",
+      "is_read": false,
+      "read_at": null,
+      "action_url": "/projects/uuid/tasks/uuid",
+      "project_id": "uuid",
+      "task_id": "uuid",
+      "sprint_id": null,
+      "created_at": "2026-02-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z",
+      "is_recent": true
+    }
+  ],
+  "total": 25,
+  "page": 1,
+  "size": 20,
+  "pages": 2
+}
+```
+
+### Статистика уведомлений
+```bash
+GET /api/v1/notifications/stats
+```
+
+**Пример ответа:**
+```json
+{
+  "total": 100,
+  "unread": 15,
+  "recent": 8,
+  "task_notifications": 45,
+  "project_notifications": 30,
+  "sprint_notifications": 20,
+  "system_notifications": 5
+}
+```
+
+### Количество непрочитанных
+```bash
+GET /api/v1/notifications/unread-count
+```
+
+**Пример ответа:**
+```json
+{
+  "unread_count": 15
+}
+```
+
+### Отметить уведомление как прочитанное
+```bash
+PATCH /api/v1/notifications/{notification_id}/read
+```
+
+**Тело запроса:**
+```json
+{
+  "is_read": true
+}
+```
+
+### Отметить все как прочитанные
+```bash
+PATCH /api/v1/notifications/mark-all-read
+```
+
+**Пример ответа:**
+```json
+{
+  "message": "Отмечено 15 уведомлений как прочитанные",
+  "marked_count": 15
+}
+```
+
+### Массовые операции
+```bash
+POST /api/v1/notifications/bulk-action
+```
+
+**Тело запроса:**
+```json
+{
+  "notification_ids": ["uuid1", "uuid2", "uuid3"],
+  "action": "mark_read"  // mark_read, mark_unread, delete
+}
+```
+
+### Удалить уведомление
+```bash
+DELETE /api/v1/notifications/{notification_id}
+```
+
+### Настройки уведомлений
+```bash
+GET /api/v1/notifications/preferences
+PUT /api/v1/notifications/preferences
+```
+
+**Пример ответа:**
+```json
+{
+  "task_assigned": true,
+  "task_completed": true,
+  "task_overdue": true,
+  "task_comment_added": true,
+  "project_created": true,
+  "project_member_added": true,
+  "project_updated": true,
+  "sprint_started": true,
+  "sprint_completed": true,
+  "system_announcements": true,
+  "deadline_reminders": true,
+  "in_app_notifications": true,
+  "browser_notifications": false,
+  "email_notifications": false
+}
+```
 
 ---
 

@@ -1,6 +1,6 @@
 """Модель уведомлений для системы Time to DO."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import (
@@ -58,6 +58,14 @@ class Notification(BaseModel):
         index=True,
     )
 
+    # Автор уведомления
+    sender_id: UUID | None = Column(  # type: ignore[assignment]
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # URL для перехода по клику на уведомление
     action_url: str | None = Column(String(500))  # type: ignore[assignment]
 
@@ -76,10 +84,17 @@ class Notification(BaseModel):
     )
 
     # Отношения
-    user = relationship("User", back_populates="notifications")
+    user = relationship(
+        "User", foreign_keys="notifications.user_id", back_populates="notifications"
+    )
     project = relationship("Project", back_populates="notifications")
     task = relationship("Task", back_populates="notifications")
     sprint = relationship("Sprint", back_populates="notifications")
+    sender = relationship(
+        "User",
+        foreign_keys="notifications.sender_id",
+        back_populates="sent_notifications",
+    )
 
     def __repr__(self) -> str:
         """Строковое представление уведомления."""
@@ -107,7 +122,7 @@ class Notification(BaseModel):
         """Проверить, является ли уведомление недавним (менее 24 часов)."""
         if not self.created_at:
             return False
-        return (datetime.utcnow() - self.created_at).total_seconds() < 86400
+        return (datetime.now(UTC) - self.created_at).total_seconds() < 86400
 
     def to_dict(self) -> dict:
         """Преобразовать уведомление в словарь."""

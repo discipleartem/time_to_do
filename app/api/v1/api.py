@@ -9,6 +9,7 @@ from app.api.v1 import (
     github_router,
     notifications_router,
     projects_router,
+    share_links_router,
     sprints_router,
     tasks_router,
     time_entries_router,
@@ -77,4 +78,11 @@ api_router.include_router(
 api_router.include_router(
     websocket_router,
     tags=["WebSocket"],
+)
+
+# Публичные ссылки (External Sharing)
+api_router.include_router(
+    share_links_router,
+    prefix="/share-links",
+    tags=["Публичные ссылки"],
 )

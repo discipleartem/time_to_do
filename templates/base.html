@@ -56,6 +56,9 @@
                 <!-- Правая часть навигации -->
                 <ul class="navbar-nav">
                     {% if current_user %}
+                    <!-- Уведомления -->
+                    {% include 'partials/notification_dropdown.html' %}
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle me-1"></i>

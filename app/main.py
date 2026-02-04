@@ -182,6 +182,18 @@ async def sprint_retrospective_page(request: Request, sprint_id: str) -> HTMLRes
     )
 
 
+@app.get("/notifications", response_class=HTMLResponse)
+async def notifications_page(request: Request) -> HTMLResponse:
+    """
+    Страница уведомлений пользователя
+    """
+    return templates.TemplateResponse(
+        request,
+        "notifications.html",
+        {"settings": settings},
+    )
+
+
 # Exception handlers
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(

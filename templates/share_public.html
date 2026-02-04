@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}{{ content.title or "Публичный доступ" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .share-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .share-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .share-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .share-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .share-type-project {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .share-type-task {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .share-type-sprint {
+        background-color: #ede9fe;
+        color: #5b21b6;
+    }
+
+    .share-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .share-stat {
+        text-align: center;
+    }
+
+    .share-stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #1f2937;
+    }
+
+    .share-stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .access-form {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .access-form h3 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        color: #1f2937;
+    }
+
+    .content-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        background: #f9fafb;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .content-card-body {
+        padding: 1.5rem;
+    }
+
+    .task-priority {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .priority-low {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .priority-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .priority-high {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .priority-urgent {
+        background-color: #fecaca;
+        color: #7f1d1d;
+    }
+
+    .project-status {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .status-completed {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-archived {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+
+    .footer-info {
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-top: 2rem;
+    }
+
+    .btn-comment {
+        background-color: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+
+    .btn-comment:hover {
+        background-color: #059669;
+        color: white;
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .share-meta {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .share-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="share-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-3">
+                    <i class="fas fa-share-alt me-2"></i>
+                    {{ content.title or "Публичный доступ" }}
+                </h1>
+                {% if share_link.description %}
+                <p class="lead mb-0">{{ share_link.description }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="share-type-badge share-type-{{ content.type }}">
+                    {% if content.type == 'project' %}Проект
+                    {% elif content.type == 'task' %}Задача
+                    {% else %}Спринт{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    {% if not access_granted %}
+    <div class="access-form">
+        <h3><i class="fas fa-lock me-2"></i>Требуется доступ</h3>
+        {% if share_link.has_password %}
+        <p>Эта ссылка защищена паролем. Введите пароль для получения доступа.</p>
+        <form method="POST" action="">
+            <input type="hidden" name="token" value="{{ share_link.token }}">
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль:</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-unlock me-2"></i>Получить доступ
+            </button>
+        </form>
+        {% else %}
+        <p>Нажмите кнопку ниже для получения доступа к контенту.</p>
+        <form method="POST" action="">
+            <input type="hidden" name="token" value="{{ share_link.token }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-eye me-2"></i>Посмотреть контент
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+
+    <div class="share-content">
+        <div class="share-meta">
+            <div>
+                <h5 class="mb-1">Информация о ссылке</h5>
+                <div class="share-stats">
+                    <div class="share-stat">
+                        <div class="share-stat-value">{{ share_link.current_views }}</div>
+                        <div class="share-stat-label">Просмотров</div>
+                    </div>
+                    {% if share_link.max_views %}
+                    <div class="share-stat">
+                        <div class="share-stat-value">{{ share_link.max_views - share_link.current_views }}</div>
+                        <div class="share-stat-label">Осталось</div>
+                    </div>
+                    {% endif %}
+                    {% if share_link.expires_at %}
+                    <div class="share-stat">
+                        <div class="share-stat-value">{{ share_link.expires_at|timeuntil }}</div>
+                        <div class="share-stat-label">Действительна</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <span class="badge bg-{% if share_link.permission == 'view' %}info{% else %}success{% endif %}">
+                    {% if share_link.permission == 'view' %}Только просмотр{% else %}Просмотр и комментарии{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5 class="mb-0">
+                    {% if content.type == 'project' %}
+                    <i class="fas fa-project-diagram me-2"></i>Проект
+                    {% elif content.type == 'task' %}
+                    <i class="fas fa-tasks me-2"></i>Задача
+                    {% else %}
+                    <i class="fas fa-calendar-check me-2"></i>Спринт
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="content-card-body">
+                {% if content.type == 'project' %}
+                <h4>{{ content.name }}</h4>
+                {% if content.description %}
+                <p class="text-muted">{{ content.description }}</p>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <strong>Статус:</strong>
+                        <span class="project-status status-{{ content.status.lower() }}">
+                            {{ content.status }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Создан:</strong> {{ content.created_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+
+                {% elif content.type == 'task' %}
+                <h4>{{ content.title }}</h4>
+                {% if content.description %}
+                <p class="text-muted">{{ content.description }}</p>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <strong>Статус:</strong>
+                        <span
+                            class="badge bg-{{ content.status == 'done' ? 'success' : content.status == 'in_progress' ? 'warning' : 'secondary' }}">
+                            {{ content.status }}
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Приоритет:</strong>
+                        <span class="task-priority priority-{{ content.priority }}">
+                            {{ content.priority }}
+                        </span>
+                    </div>
+                    {% if content.story_points %}
+                    <div class="col-md-3">
+                        <strong>Story Points:</strong> {{ content.story_points }}
+                    </div>
+                    {% endif %}
+                    <div class="col-md-3">
+                        <strong>Создана:</strong> {{ content.created_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+
+                {% else %}
+                <h4>Спринт</h4>
+                <p>Информация о спринте будет доступна скоро.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_comment %}
+        <div class="mt-3">
+            <a href="#" class="btn-comment">
+                <i class="fas fa-comment me-2"></i>Добавить комментарий
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% endif %}
+</div>
+
+<div class="container">
+    <div class="footer-info">
+        <p>
+            <i class="fas fa-info-circle me-1"></i>
+            Это публичная ссылка для доступа к
+            {% if content.type == 'project' %}проекту
+            {% elif content.type == 'task' %}задаче
+            {% else %}спринту{% endif %}
+            в системе Time to DO.
+            {% if share_link.expires_at %}
+            Ссылка действительна до {{ share_link.expires_at|date:"d.m.Y H:i" }}.
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Автоматическое обновление времени до истечения ссылки
+        {% if share_link.expires_at and access_granted %}
+        function updateExpiryTime() {
+            const expiryElement = document.querySelector('.share-stat-value');
+            if (expiryElement) {
+                const expiryDate = new Date('{{ share_link.expires_at|date:"Y-m-d\\TH:i:s" }}');
+                const now = new Date();
+                const diff = expiryDate - now;
+
+                if (diff > 0) {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+                    let timeString = '';
+                    if (days > 0) timeString += days + 'д ';
+                    if (hours > 0) timeString += hours + 'ч ';
+                    if (minutes > 0) timeString += minutes + 'м';
+
+                    expiryElement.textContent = timeString || 'Менее минуты';
+                } else {
+                    expiryElement.textContent = 'Истекла';
+                    expiryElement.parentElement.classList.add('text-danger');
+                }
+            }
+        }
+
+        updateExpiryTime();
+        setInterval(updateExpiryTime, 60000); // Обновлять каждую минуту
+        {% endif %}
+    });
+</script>
+{% endblock %}

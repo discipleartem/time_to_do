@@ -1,0 +1,698 @@
+{% extends "base.html" %}
+
+{% block title %}Уведомления - {{ settings.PROJECT_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.notifications-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.notification-card {
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.notification-card.unread {
+    border-left-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.notification-type-badge {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.notification-type-task { background-color: #28a745; }
+.notification-type-project { background-color: #007bff; }
+.notification-type-sprint { background-color: #fd7e14; }
+.notification-type-system { background-color: #6c757d; }
+.notification-type-deadline { background-color: #dc3545; }
+
+.filters-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .filters-section .row {
+        gap: 1rem;
+    }
+
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid notifications-container py-4">
+    <!-- Заголовок и статистика -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-bell me-2"></i>Уведомления
+                </h1>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="mark-all-read-btn">
+                        <i class="bi bi-check-all me-2"></i>Отметить все как прочитанные
+                    </button>
+                    <button class="btn btn-outline-danger" id="clear-read-btn">
+                        <i class="bi bi-trash me-2"></i>Очистить прочитанные
+                    </button>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="row" id="stats-section">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number" id="total-count">0</div>
+                        <div class="text-muted">Всего</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number text-primary" id="unread-count">0</div>
+                        <div class="text-muted">Непрочитанных</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number text-success" id="recent-count">0</div>
+                        <div class="text-muted">За последние 24ч</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number text-info" id="task-count">0</div>
+                        <div class="text-muted">О задачах</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="filters-section rounded p-4 mb-4">
+        <div class="row align-items-end">
+            <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+                <label for="filter-type" class="form-label">Тип уведомлений</label>
+                <select class="form-select" id="filter-type">
+                    <option value="">Все типы</option>
+                    <option value="task_assigned">Назначение задачи</option>
+                    <option value="task_completed">Завершение задачи</option>
+                    <option value="task_comment_added">Комментарий к задаче</option>
+                    <option value="project_member_added">Добавление в проект</option>
+                    <option value="sprint_started">Начало спринта</option>
+                    <option value="sprint_completed">Завершение спринта</option>
+                    <option value="deadline_reminder">Напоминание о дедлайне</option>
+                    <option value="system">Системные</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+                <label for="filter-status" class="form-label">Статус</label>
+                <select class="form-select" id="filter-status">
+                    <option value="">Все</option>
+                    <option value="unread">Непрочитанные</option>
+                    <option value="read">Прочитанные</option>
+                </select>
+            </div>
+            <div class="col-md-4 col-sm-6 mb-3 mb-md-0">
+                <label for="search-input" class="form-label">Поиск</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="search-input" placeholder="Поиск по заголовку или тексту...">
+                    <button class="btn btn-outline-light" type="button" id="search-btn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <button class="btn btn-light w-100" id="reset-filters-btn">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Сброс
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список уведомлений -->
+    <div class="row">
+        <div class="col-12">
+            <!-- Загрузка -->
+            <div id="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 text-muted">Загрузка уведомлений...</p>
+            </div>
+
+            <!-- Уведомления -->
+            <div id="notifications-list" class="d-none">
+                <!-- Уведомления будут загружены через JavaScript -->
+            </div>
+
+            <!-- Нет уведомлений -->
+            <div id="empty-state" class="empty-state d-none">
+                <i class="bi bi-bell"></i>
+                <h4>Уведомлений не найдено</h4>
+                <p class="text-muted">Попробуйте изменить фильтры или поисковый запрос</p>
+            </div>
+
+            <!-- Пагинация -->
+            <div id="pagination" class="d-flex justify-content-center mt-4">
+                <!-- Пагинация будет загружена через JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Подтверждение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                Вы уверены?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class NotificationsPage {
+    constructor() {
+        this.currentPage = 1;
+        this.pageSize = 20;
+        this.totalPages = 1;
+        this.filters = {
+            type: '',
+            status: '',
+            search: ''
+        };
+        this.stats = {};
+        this.init();
+    }
+
+    async init() {
+        this.setupEventListeners();
+        await this.loadStats();
+        await this.loadNotifications();
+    }
+
+    setupEventListeners() {
+        // Фильтры
+        document.getElementById('filter-type').addEventListener('change', () => this.applyFilters());
+        document.getElementById('filter-status').addEventListener('change', () => this.applyFilters());
+        document.getElementById('search-btn').addEventListener('click', () => this.applyFilters());
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.applyFilters();
+        });
+        document.getElementById('reset-filters-btn').addEventListener('click', () => this.resetFilters());
+
+        // Действия
+        document.getElementById('mark-all-read-btn').addEventListener('click', () => this.markAllAsRead());
+        document.getElementById('clear-read-btn').addEventListener('click', () => this.clearReadNotifications());
+
+        // Модальное окно
+        document.getElementById('confirmModalBtn').addEventListener('click', () => {
+            this.confirmAction();
+        });
+    }
+
+    async loadStats() {
+        try {
+            const response = await fetch('/api/v1/notifications/stats');
+            const stats = await response.json();
+            this.stats = stats;
+            this.renderStats();
+        } catch (error) {
+            console.error('Ошибка загрузки статистики:', error);
+        }
+    }
+
+    renderStats() {
+        document.getElementById('total-count').textContent = this.stats.total || 0;
+        document.getElementById('unread-count').textContent = this.stats.unread || 0;
+        document.getElementById('recent-count').textContent = this.stats.recent || 0;
+        document.getElementById('task-count').textContent = this.stats.task_notifications || 0;
+    }
+
+    async loadNotifications() {
+        const loading = document.getElementById('loading');
+        const list = document.getElementById('notifications-list');
+        const empty = document.getElementById('empty-state');
+
+        try {
+            loading.classList.remove('d-none');
+            list.classList.add('d-none');
+            empty.classList.add('d-none');
+
+            const params = new URLSearchParams({
+                limit: this.pageSize,
+                offset: (this.currentPage - 1) * this.pageSize,
+                ...(this.filters.type && { notification_type: this.filters.type }),
+                ...(this.filters.status === 'unread' && { unread_only: true }),
+            });
+
+            const response = await fetch(`/api/v1/notifications?${params}`);
+            const data = await response.json();
+
+            loading.classList.add('d-none');
+
+            if (data.notifications && data.notifications.length > 0) {
+                this.totalPages = data.pages;
+                this.renderNotifications(data.notifications);
+                this.renderPagination();
+                list.classList.remove('d-none');
+            } else {
+                empty.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки уведомлений:', error);
+            loading.classList.add('d-none');
+            empty.classList.remove('d-none');
+            empty.querySelector('h4').textContent = 'Ошибка загрузки уведомлений';
+        }
+    }
+
+    renderNotifications(notifications) {
+        const list = document.getElementById('notifications-list');
+
+        // Применяем поиск если есть текст
+        let filteredNotifications = notifications;
+        if (this.filters.search) {
+            const searchTerm = this.filters.search.toLowerCase();
+            filteredNotifications = notifications.filter(n =>
+                n.title.toLowerCase().includes(searchTerm) ||
+                n.message.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        list.innerHTML = filteredNotifications.map(notification => this.createNotificationCard(notification)).join('');
+    }
+
+    createNotificationCard(notification) {
+        const createdAt = new Date(notification.created_at);
+        const timeAgo = this.getTimeAgo(createdAt);
+        const typeClass = this.getNotificationTypeClass(notification.notification_type);
+
+        return `
+            <div class="card notification-card mb-3 ${!notification.is_read ? 'unread' : ''}" data-id="${notification.id}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-start">
+                                <div class="notification-type-badge notification-type-${typeClass} me-3 mt-1"></div>
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-1">
+                                        ${this.escapeHtml(notification.title)}
+                                        ${!notification.is_read ? '<span class="badge bg-primary ms-2">Новое</span>' : ''}
+                                    </h6>
+                                    <p class="card-text text-muted mb-2">${this.escapeHtml(notification.message)}</p>
+                                    <div class="d-flex align-items-center text-muted small">
+                                        <span><i class="bi bi-clock me-1"></i>${timeAgo}</span>
+                                        <span class="ms-3"><i class="bi bi-tag me-1"></i>${this.getTypeLabel(notification.notification_type)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group">
+                                ${notification.action_url ? `
+                                    <a href="${notification.action_url}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>Перейти
+                                    </a>
+                                ` : ''}
+                                ${!notification.is_read ? `
+                                    <button class="btn btn-outline-success btn-sm" onclick="notificationsPage.markAsRead('${notification.id}')">
+                                        <i class="bi bi-check me-1"></i>Прочитано
+                                    </button>
+                                ` : ''}
+                                <button class="btn btn-outline-danger btn-sm" onclick="notificationsPage.deleteNotification('${notification.id}')">
+                                    <i class="bi bi-trash me-1"></i>Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderPagination() {
+        const pagination = document.getElementById('pagination');
+
+        if (this.totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+
+        let html = '<nav><ul class="pagination">';
+
+        // Предыдущая
+        html += `
+            <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="notificationsPage.goToPage(${this.currentPage - 1})">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+        `;
+
+        // Страницы
+        const startPage = Math.max(1, this.currentPage - 2);
+        const endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+        if (startPage > 1) {
+            html += '<li class="page-item"><a class="page-link" href="#" onclick="notificationsPage.goToPage(1)">1</a></li>';
+            if (startPage > 2) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `
+                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="notificationsPage.goToPage(${i})">${i}</a>
+                </li>
+            `;
+        }
+
+        if (endPage < this.totalPages) {
+            if (endPage < this.totalPages - 1) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            html += `<li class="page-item"><a class="page-link" href="#" onclick="notificationsPage.goToPage(${this.totalPages})">${this.totalPages}</a></li>`;
+        }
+
+        // Следующая
+        html += `
+            <li class="page-item ${this.currentPage === this.totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="notificationsPage.goToPage(${this.currentPage + 1})">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        `;
+
+        html += '</ul></nav>';
+        pagination.innerHTML = html;
+    }
+
+    async applyFilters() {
+        this.filters.type = document.getElementById('filter-type').value;
+        this.filters.status = document.getElementById('filter-status').value;
+        this.filters.search = document.getElementById('search-input').value.trim();
+        this.currentPage = 1;
+
+        await this.loadNotifications();
+    }
+
+    async resetFilters() {
+        document.getElementById('filter-type').value = '';
+        document.getElementById('filter-status').value = '';
+        document.getElementById('search-input').value = '';
+
+        this.filters = { type: '', status: '', search: '' };
+        this.currentPage = 1;
+
+        await this.loadNotifications();
+    }
+
+    async goToPage(page) {
+        if (page < 1 || page > this.totalPages) return;
+
+        this.currentPage = page;
+        await this.loadNotifications();
+
+        // Прокручиваем к началу списка
+        document.getElementById('notifications-list').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async markAsRead(notificationId) {
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}/read`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_read: true })
+            });
+
+            if (response.ok) {
+                const card = document.querySelector(`[data-id="${notificationId}"]`);
+                if (card) {
+                    card.classList.remove('unread');
+                    const badge = card.querySelector('.badge');
+                    if (badge) badge.remove();
+
+                    const btn = card.querySelector('button[onclick*="markAsRead"]');
+                    if (btn) btn.remove();
+                }
+
+                // Обновляем статистику
+                await this.loadStats();
+            }
+        } catch (error) {
+            console.error('Ошибка отметки уведомления как прочитанного:', error);
+        }
+    }
+
+    async deleteNotification(notificationId) {
+        this.showConfirm(
+            'Удаление уведомления',
+            'Вы уверены, что хотите удалить это уведомление?',
+            async () => {
+                try {
+                    const response = await fetch(`/api/v1/notifications/${notificationId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        const card = document.querySelector(`[data-id="${notificationId}"]`);
+                        if (card) {
+                            card.remove();
+                        }
+
+                        // Проверяем, остались ли уведомления
+                        const remainingCards = document.querySelectorAll('.notification-card');
+                        if (remainingCards.length === 0) {
+                            document.getElementById('notifications-list').classList.add('d-none');
+                            document.getElementById('empty-state').classList.remove('d-none');
+                        }
+
+                        // Обновляем статистику
+                        await this.loadStats();
+                    }
+                } catch (error) {
+                    console.error('Ошибка удаления уведомления:', error);
+                }
+            }
+        );
+    }
+
+    async markAllAsRead() {
+        this.showConfirm(
+            'Отметить все как прочитанные',
+            'Вы уверены, что хотите отметить все уведомления как прочитанные?',
+            async () => {
+                try {
+                    const response = await fetch('/api/v1/notifications/mark-all-read', {
+                        method: 'PATCH'
+                    });
+
+                    if (response.ok) {
+                        document.querySelectorAll('.notification-card.unread').forEach(card => {
+                            card.classList.remove('unread');
+                            const badge = card.querySelector('.badge');
+                            if (badge) badge.remove();
+
+                            const btn = card.querySelector('button[onclick*="markAsRead"]');
+                            if (btn) btn.remove();
+                        });
+
+                        // Обновляем статистику
+                        await this.loadStats();
+                    }
+                } catch (error) {
+                    console.error('Ошибка отметки всех уведомлений как прочитанных:', error);
+                }
+            }
+        );
+    }
+
+    async clearReadNotifications() {
+        this.showConfirm(
+            'Очистить прочитанные',
+            'Вы уверены, что хотите удалить все прочитанные уведомления?',
+            async () => {
+                try {
+                    // Получаем ID прочитанных уведомлений
+                    const readCards = document.querySelectorAll('.notification-card:not(.unread)');
+                    const notificationIds = Array.from(readCards).map(card => card.dataset.id);
+
+                    if (notificationIds.length === 0) {
+                        alert('Нет прочитанных уведомлений для удаления');
+                        return;
+                    }
+
+                    const response = await fetch('/api/v1/notifications/bulk-action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            notification_ids: notificationIds,
+                            action: 'delete'
+                        })
+                    });
+
+                    if (response.ok) {
+                        readCards.forEach(card => card.remove());
+
+                        // Обновляем список если нужно
+                        const remainingCards = document.querySelectorAll('.notification-card');
+                        if (remainingCards.length === 0) {
+                            document.getElementById('notifications-list').classList.add('d-none');
+                            document.getElementById('empty-state').classList.remove('d-none');
+                        }
+
+                        // Обновляем статистику
+                        await this.loadStats();
+                    }
+                } catch (error) {
+                    console.error('Ошибка удаления прочитанных уведомлений:', error);
+                }
+            }
+        );
+    }
+
+    showConfirm(title, message, onConfirm) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalBody').textContent = message;
+
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        modal.show();
+
+        // Сохраняем callback
+        this.confirmCallback = onConfirm;
+    }
+
+    confirmAction() {
+        if (this.confirmCallback) {
+            this.confirmCallback();
+        }
+
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        modal.hide();
+    }
+
+    getNotificationTypeClass(type) {
+        const typeMap = {
+            'task_assigned': 'task',
+            'task_completed': 'task',
+            'task_overdue': 'deadline',
+            'task_moved': 'task',
+            'task_comment_added': 'task',
+            'project_created': 'project',
+            'project_updated': 'project',
+            'project_member_added': 'project',
+            'project_member_removed': 'project',
+            'sprint_started': 'sprint',
+            'sprint_completed': 'sprint',
+            'sprint_task_assigned': 'sprint',
+            'system_announcement': 'system',
+            'welcome': 'system',
+            'deadline_reminder': 'deadline'
+        };
+        return typeMap[type] || 'system';
+    }
+
+    getTypeLabel(type) {
+        const labels = {
+            'task_assigned': 'Задача назначена',
+            'task_completed': 'Задача завершена',
+            'task_overdue': 'Просроченная задача',
+            'task_moved': 'Задача перемещена',
+            'task_comment_added': 'Комментарий',
+            'project_created': 'Проект создан',
+            'project_updated': 'Проект обновлен',
+            'project_member_added': 'Участник добавлен',
+            'project_member_removed': 'Участник удален',
+            'sprint_started': 'Спринт начат',
+            'sprint_completed': 'Спринт завершен',
+            'sprint_task_assigned': 'Задача спринта',
+            'system_announcement': 'Системное',
+            'welcome': 'Добро пожаловать',
+            'deadline_reminder': 'Напоминание'
+        };
+        return labels[type] || type;
+    }
+
+    getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+
+        if (seconds < 60) return 'только что';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)} мин. назад`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)} ч. назад`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)} д. назад`;
+
+        return date.toLocaleDateString('ru-RU');
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Инициализация страницы
+let notificationsPage;
+
+document.addEventListener('DOMContentLoaded', () => {
+    notificationsPage = new NotificationsPage();
+});
+</script>
+{% endblock %}

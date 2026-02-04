@@ -12,6 +12,7 @@
 - **[DEPENDENCIES.md](./technical/DEPENDENCIES.md)** - Управление зависимостями
 - **[DEPLOYMENT.md](./technical/DEPLOYMENT.md)** - Развертывание в production
 - **[DOCKER_SIMPLE.md](./technical/DOCKER_SIMPLE.md)** - Краткое руководство по Docker
+- **[EXTERNAL_SHARING.md](./technical/EXTERNAL_SHARING.md)** - Публичные ссылки и внешний доступ
 
 ### 🚀 [development/](./development/) - Разработка
 - **[DEVELOPMENT.md](./development/DEVELOPMENT.md)** - Полное руководство для разработчиков

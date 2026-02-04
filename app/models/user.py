@@ -139,6 +139,12 @@ class User(BaseModel):
         cascade="all, delete-orphan",
     )
 
+    created_share_links = relationship(
+        "ShareLink",
+        back_populates="creator",
+        cascade="all, delete-orphan",
+    )
+
     # Properties с правильной типизацией для mypy
     @property
     def id_str(self) -> str:
@@ -193,7 +199,16 @@ class User(BaseModel):
 
     notifications = relationship(
         "Notification",
+        foreign_keys="Notification.user_id",
         back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="desc(Notification.created_at)",
+    )
+
+    sent_notifications = relationship(
+        "Notification",
+        foreign_keys="Notification.sender_id",
+        back_populates="sender",
         cascade="all, delete-orphan",
         order_by="desc(Notification.created_at)",
     )

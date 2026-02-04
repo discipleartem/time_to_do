@@ -1,0 +1,498 @@
+<!-- Компонент уведомлений для навигационной панели -->
+<li class="nav-item dropdown">
+    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" id="notification-dropdown">
+        <i class="bi bi-bell me-1"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              id="notification-badge" style="display: none;">
+            0
+            <span class="visually-hidden">непрочитанных уведомлений</span>
+        </span>
+    </a>
+
+    <!-- Выпадающее меню уведомлений -->
+    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="min-width: 350px; max-height: 400px; overflow-y: auto;">
+        <li class="dropdown-header d-flex justify-content-between align-items-center">
+            <span>Уведомления</span>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" id="mark-all-read-btn" title="Отметить все как прочитанные">
+                    <i class="bi bi-check-all"></i>
+                </button>
+                <a href="/notifications" class="btn btn-sm btn-outline-secondary" title="Все уведомления">
+                    <i class="bi bi-list"></i>
+                </a>
+            </div>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+
+        <!-- Загрузка уведомлений -->
+        <li id="notifications-loading" class="text-center p-3">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </li>
+
+        <!-- Список уведомлений -->
+        <li id="notifications-list">
+            <!-- Уведомления будут загружены через JavaScript -->
+        </li>
+
+        <!-- Нет уведомлений -->
+        <li id="no-notifications" class="text-center p-3" style="display: none;">
+            <i class="bi bi-bell text-muted" style="font-size: 2rem;"></i>
+            <p class="text-muted mb-0">Нет новых уведомлений</p>
+        </li>
+
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a class="dropdown-item text-center" href="/notifications">
+                <i class="bi bi-list-ul me-2"></i>Все уведомления
+            </a>
+        </li>
+    </ul>
+</li>
+
+<style>
+/* Стили для уведомлений */
+.notification-dropdown {
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.notification-item.unread {
+    border-left-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.notification-item:hover {
+    background-color: #e9ecef;
+    cursor: pointer;
+}
+
+.notification-item.unread:hover {
+    background-color: #e7f3ff;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0; /* Для правильного обрезания текста */
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+.notification-message {
+    font-size: 0.8rem;
+    color: #6c757d;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+}
+
+.notification-meta {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notification-type-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Типы уведомлений */
+.notification-type-task { background-color: #28a745; }
+.notification-type-project { background-color: #007bff; }
+.notification-type-sprint { background-color: #fd7e14; }
+.notification-type-system { background-color: #6c757d; }
+.notification-type-deadline { background-color: #dc3545; }
+
+/* Анимация для badge */
+#notification-badge {
+    transition: all 0.3s ease;
+}
+
+#notification-badge.pulse {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Кнопки действий в уведомлении */
+.notification-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.notification-item:hover .notification-actions {
+    opacity: 1;
+}
+
+.notification-action-btn {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.7rem;
+    border-radius: 0.25rem;
+    border: none;
+    background: rgba(0,0,0,0.1);
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+
+.notification-action-btn:hover {
+    background: rgba(0,0,0,0.2);
+    color: #495057;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        min-width: 300px;
+        max-height: 300px;
+    }
+
+    .notification-title {
+        font-size: 0.85rem;
+    }
+
+    .notification-message {
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<script>
+// Класс для управления уведомлениями
+class NotificationManager {
+    constructor() {
+        this.unreadCount = 0;
+        this.notifications = [];
+        this.init();
+    }
+
+    async init() {
+        // Загружаем количество непрочитанных уведомлений
+        await this.loadUnreadCount();
+
+        // Загружаем последние уведомления для dropdown
+        await this.loadRecentNotifications();
+
+        // Устанавливаем обработчики событий
+        this.setupEventListeners();
+
+        // Запускаем периодическое обновление
+        this.startPolling();
+    }
+
+    setupEventListeners() {
+        // Клик на dropdown
+        document.getElementById('notification-dropdown').addEventListener('click', () => {
+            this.loadRecentNotifications();
+        });
+
+        // Кнопка "Отметить все как прочитанные"
+        document.getElementById('mark-all-read-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.markAllAsRead();
+        });
+    }
+
+    async loadUnreadCount() {
+        try {
+            const response = await fetch('/api/v1/notifications/unread-count');
+            const data = await response.json();
+            this.updateUnreadCount(data.unread_count);
+        } catch (error) {
+            console.error('Ошибка загрузки количества уведомлений:', error);
+        }
+    }
+
+    async loadRecentNotifications() {
+        const loadingEl = document.getElementById('notifications-loading');
+        const listEl = document.getElementById('notifications-list');
+        const noNotificationsEl = document.getElementById('no-notifications');
+
+        try {
+            // Показываем загрузку
+            loadingEl.style.display = 'block';
+            listEl.innerHTML = '';
+            noNotificationsEl.style.display = 'none';
+
+            const response = await fetch('/api/v1/notifications?limit=5');
+            const data = await response.json();
+
+            // Скрываем загрузку
+            loadingEl.style.display = 'none';
+
+            if (data.notifications && data.notifications.length > 0) {
+                this.renderNotifications(data.notifications);
+            } else {
+                noNotificationsEl.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки уведомлений:', error);
+            loadingEl.style.display = 'none';
+            listEl.innerHTML = '<li class="dropdown-item text-danger">Ошибка загрузки уведомлений</li>';
+        }
+    }
+
+    renderNotifications(notifications) {
+        const listEl = document.getElementById('notifications-list');
+        listEl.innerHTML = '';
+
+        notifications.forEach(notification => {
+            const item = this.createNotificationElement(notification);
+            listEl.appendChild(item);
+        });
+    }
+
+    createNotificationElement(notification) {
+        const li = document.createElement('li');
+        li.className = `notification-item ${!notification.is_read ? 'unread' : ''}`;
+
+        const createdAt = new Date(notification.created_at);
+        const timeAgo = this.getTimeAgo(createdAt);
+
+        li.innerHTML = `
+            <div class="dropdown-item p-3" onclick="notificationManager.handleNotificationClick('${notification.id}', '${notification.action_url || ''}')">
+                <div class="d-flex align-items-start">
+                    <div class="notification-type-icon notification-type-${this.getNotificationTypeClass(notification.notification_type)} me-2 mt-1"></div>
+                    <div class="notification-content">
+                        <div class="notification-title">${this.escapeHtml(notification.title)}</div>
+                        <div class="notification-message">${this.escapeHtml(notification.message)}</div>
+                        <div class="notification-meta">
+                            <span>${timeAgo}</span>
+                            ${!notification.is_read ? '<span class="badge bg-primary ms-1">Новое</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="notification-actions">
+                        ${!notification.is_read ? `
+                            <button class="notification-action-btn" onclick="event.stopPropagation(); notificationManager.markAsRead('${notification.id}')" title="Отметить как прочитанное">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        ` : ''}
+                        <button class="notification-action-btn" onclick="event.stopPropagation(); notificationManager.deleteNotification('${notification.id}')" title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return li;
+    }
+
+    getNotificationTypeClass(type) {
+        const typeMap = {
+            'task_assigned': 'task',
+            'task_completed': 'task',
+            'task_overdue': 'deadline',
+            'task_moved': 'task',
+            'task_comment_added': 'task',
+            'project_created': 'project',
+            'project_updated': 'project',
+            'project_member_added': 'project',
+            'project_member_removed': 'project',
+            'sprint_started': 'sprint',
+            'sprint_completed': 'sprint',
+            'sprint_task_assigned': 'sprint',
+            'system_announcement': 'system',
+            'welcome': 'system',
+            'deadline_reminder': 'deadline'
+        };
+        return typeMap[type] || 'system';
+    }
+
+    getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+
+        if (seconds < 60) return 'только что';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)} мин. назад`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)} ч. назад`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)} д. назад`;
+
+        return date.toLocaleDateString('ru-RU');
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    updateUnreadCount(count) {
+        this.unreadCount = count;
+        const badge = document.getElementById('notification-badge');
+
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'inline-block';
+            badge.classList.add('pulse');
+
+            // Убираем анимацию через 3 секунды
+            setTimeout(() => badge.classList.remove('pulse'), 3000);
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    async handleNotificationClick(notificationId, actionUrl) {
+        // Отмечаем как прочитанное
+        await this.markAsRead(notificationId);
+
+        // Переходим по URL если есть
+        if (actionUrl) {
+            window.location.href = actionUrl;
+        }
+    }
+
+    async markAsRead(notificationId) {
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}/read`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ is_read: true })
+            });
+
+            if (response.ok) {
+                // Обновляем UI
+                const notificationItem = document.querySelector(`[onclick*="${notificationId}"]`)?.closest('.notification-item');
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                    const badge = notificationItem.querySelector('.badge');
+                    if (badge) badge.remove();
+                }
+
+                // Обновляем счетчик
+                this.unreadCount = Math.max(0, this.unreadCount - 1);
+                this.updateUnreadCount(this.unreadCount);
+            }
+        } catch (error) {
+            console.error('Ошибка отметки уведомления как прочитанного:', error);
+        }
+    }
+
+    async deleteNotification(notificationId) {
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                // Удаляем из UI
+                const notificationItem = document.querySelector(`[onclick*="${notificationId}"]`)?.closest('.notification-item');
+                if (notificationItem) {
+                    notificationItem.remove();
+
+                    // Если это было непрочитанное уведомление, обновляем счетчик
+                    if (notificationItem.classList.contains('unread')) {
+                        this.unreadCount = Math.max(0, this.unreadCount - 1);
+                        this.updateUnreadCount(this.unreadCount);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка удаления уведомления:', error);
+        }
+    }
+
+    async markAllAsRead() {
+        try {
+            const response = await fetch('/api/v1/notifications/mark-all-read', {
+                method: 'PATCH'
+            });
+
+            if (response.ok) {
+                // Обновляем UI
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                    const badge = item.querySelector('.badge');
+                    if (badge) badge.remove();
+                });
+
+                // Обнуляем счетчик
+                this.unreadCount = 0;
+                this.updateUnreadCount(0);
+            }
+        } catch (error) {
+            console.error('Ошибка отметки всех уведомлений как прочитанных:', error);
+        }
+    }
+
+    startPolling() {
+        // Обновляем количество непрочитанных каждые 30 секунд
+        setInterval(() => {
+            this.loadUnreadCount();
+        }, 30000);
+    }
+
+    // Метод для добавления нового уведомления (для WebSocket интеграции)
+    addNotification(notification) {
+        this.notifications.unshift(notification);
+
+        if (!notification.is_read) {
+            this.unreadCount++;
+            this.updateUnreadCount(this.unreadCount);
+
+            // Показываем уведомление в браузере если разрешено
+            this.showBrowserNotification(notification);
+        }
+
+        // Обновляем dropdown если он открыт
+        const dropdown = document.querySelector('.notification-dropdown.show');
+        if (dropdown) {
+            this.loadRecentNotifications();
+        }
+    }
+
+    showBrowserNotification(notification) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(notification.title, {
+                body: notification.message,
+                icon: '/static/images/favicon.ico',
+                tag: notification.id
+            }).onclick = () => {
+                window.focus();
+                if (notification.action_url) {
+                    window.location.href = notification.action_url;
+                }
+            };
+        }
+    }
+}
+
+// Инициализируем менеджер уведомлений
+let notificationManager;
+
+document.addEventListener('DOMContentLoaded', () => {
+    notificationManager = new NotificationManager();
+
+    // Запрашиваем разрешение на браузерные уведомления
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+});
+</script>
