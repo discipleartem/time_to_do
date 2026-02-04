@@ -142,3 +142,40 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     """
     result = await db.execute(select(User).where(User.email == email))
     return result.scalar_one_or_none()
+
+
+async def get_current_user_ws(token: str) -> User:
+    """
+    Получение текущего пользователя по JWT токену для WebSocket
+
+    Args:
+        token: JWT токен из query параметра
+
+    Returns:
+        User: Текущий пользователь
+
+    Raises:
+        HTTPException: Если токен невалидный или пользователь не найден
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Не удалось проверить учетные данные",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        email = verify_token(token)
+        if email is None:
+            raise credentials_exception
+    except Exception as e:
+        raise credentials_exception from e
+
+    # Создаем временную сессию для WebSocket
+    from app.core.database import get_db_session_context
+
+    async with get_db_session_context() as db:
+        user = await get_user_by_email(db, email=email)
+        if user is None:
+            raise credentials_exception
+
+        return user

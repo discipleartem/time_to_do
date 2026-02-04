@@ -812,7 +812,48 @@ projects = api.get_projects()
 
 ---
 
-## 📚 SDK и клиенты
+## 🌐 WebSocket Real-time API
+
+### WebSocket эндпоинт
+```
+WS /api/v1/ws?token=<jwt_token>
+```
+
+### Статистика соединений
+```http
+GET /api/v1/ws/stats
+Authorization: Bearer <token>
+```
+
+### Типы событий
+- **task_created** - создание задачи
+- **task_updated** - обновление задачи
+- **task_deleted** - удаление задачи
+- **comment_added** - добавление комментария
+- **project_updated** - обновление проекта
+- **user_online/offline** - статус пользователя
+
+### Пример клиента
+```javascript
+// Подключение
+const ws = new WebSocket('ws://localhost:8000/api/v1/ws?token=your_jwt');
+
+// Обработка событий
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Событие:', data.event_type, data.data);
+};
+
+// Присоединение к проекту
+ws.send(JSON.stringify({
+    event_type: 'join_project',
+    project_id: 'project-uuid'
+}));
+```
+
+---
+
+## 📚 SDK и библиотеки
 
 ### Python SDK
 ```bash

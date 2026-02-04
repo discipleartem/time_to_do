@@ -12,6 +12,7 @@ from app.api.v1 import (
     tasks_router,
     time_entries_router,
     users_router,
+    websocket_router,
 )
 
 api_router = APIRouter()
@@ -62,4 +63,10 @@ api_router.include_router(
 api_router.include_router(
     sprints_router,
     tags=["SCRUM"],
+)
+
+# WebSocket
+api_router.include_router(
+    websocket_router,
+    tags=["WebSocket"],
 )

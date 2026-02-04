@@ -24,6 +24,8 @@ from app.schemas.task import (
 from app.schemas.task import (
     Task as TaskSchema,
 )
+from app.websocket.events import EventType
+from app.websocket.handlers import handler
 
 router = APIRouter()
 
@@ -113,6 +115,22 @@ async def create_task(
     await db.commit()
     await db.refresh(task)
 
+    # Отправляем WebSocket уведомление о создании задачи
+    await handler.broadcast_task_event(
+        EventType.TASK_CREATED,
+        {
+            "task_id": task.id,
+            "project_id": str(task.project_id),
+            "title": task.title,
+            "status": task.status,
+            "priority": task.priority,
+            "story_point": task.story_point,
+            "assignee_id": task.assignee_id,
+            "creator_id": task.creator_id,
+        },
+        current_user.id,
+    )
+
     return TaskSchema.model_validate(task)
 
 
@@ -158,6 +176,21 @@ async def update_task(
     await db.commit()
     await db.refresh(task)
 
+    # Отправляем WebSocket уведомление об обновлении задачи
+    await handler.broadcast_task_event(
+        EventType.TASK_UPDATED,
+        {
+            "task_id": task.id,
+            "project_id": str(task.project_id),
+            "title": task.title,
+            "status": task.status,
+            "priority": task.priority,
+            "story_point": task.story_point,
+            "assignee_id": task.assignee_id,
+        },
+        current_user.id,
+    )
+
     return TaskSchema.model_validate(task)
 
 
@@ -182,6 +215,18 @@ async def delete_task(
 
     await db.delete(task)
     await db.commit()
+
+    # Отправляем WebSocket уведомление об удалении задачи
+    await handler.broadcast_task_event(
+        EventType.TASK_DELETED,
+        {
+            "task_id": task.id,
+            "project_id": str(task.project_id),
+            "title": task.title,
+            "status": task.status,
+        },
+        current_user.id,
+    )
 
     return {"message": "Задача успешно удалена"}
 
@@ -240,6 +285,19 @@ async def create_task_comment(
     db.add(comment)
     await db.commit()
     await db.refresh(comment, ["author"])
+
+    # Отправляем WebSocket уведомление о добавлении комментария
+    await handler.broadcast_comment_event(
+        EventType.COMMENT_ADDED,
+        {
+            "comment_id": comment.id,
+            "task_id": comment.task_id,
+            "project_id": str(task.project_id),
+            "content": comment.content,
+            "author_id": comment.author_id,
+        },
+        current_user.id,
+    )
 
     # Убедимся, что comment имеет все необходимые поля
     return CommentSchema.model_validate(comment)
