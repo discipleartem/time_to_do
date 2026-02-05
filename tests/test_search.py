@@ -62,10 +62,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User, sample_search_index: SearchIndex
     ) -> None:
         """Тест успешного поиска через POST"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 
@@ -100,10 +100,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User, sample_search_index: SearchIndex
     ) -> None:
         """Тест успешного поиска через GET"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 
@@ -135,10 +135,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User
     ) -> None:
         """Тест поиска с пустым запросом"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 
@@ -163,10 +163,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User
     ) -> None:
         """Тест поиска с неверным типом сущности"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 
@@ -203,10 +203,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User
     ) -> None:
         """Тест сохранения поиска"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 
@@ -238,10 +238,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User
     ) -> None:
         """Тест получения сохраненных поисков"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 
@@ -261,10 +261,10 @@ class TestSearchAPI:
         self, client: AsyncClient, test_user: User
     ) -> None:
         """Тест получения подсказок поиска"""
-        # Логинимся
+        # Логинимся с правильным email пользователя
         login_response = await client.post(
             "/api/v1/auth/login/oauth2",
-            data={"username": "test@example.com", "password": "password123"},
+            data={"username": test_user.email, "password": "password123"},
         )
         assert login_response.status_code == 200
 

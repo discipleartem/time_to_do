@@ -2,6 +2,7 @@
 API v1 модули
 """
 
+from .analytics import router as analytics_router
 from .auth import router as auth_router
 from .files import router as files_router
 from .github import router as github_router
@@ -29,4 +30,5 @@ __all__ = [
     "websocket_router",
     "files_router",
     "subscription_router",
+    "analytics_router",
 ]

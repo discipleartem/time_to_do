@@ -165,6 +165,30 @@ class User(BaseModel):
         cascade="all, delete-orphan",
     )
 
+    analytics_events = relationship(
+        "AnalyticsEvent",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    metrics = relationship(
+        "UserMetrics",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    dashboards = relationship(
+        "Dashboard",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    analytics_reports = relationship(
+        "AnalyticsReport",
+        back_populates="creator",
+        cascade="all, delete-orphan",
+    )
+
     # Properties с правильной типизацией для mypy
     @property
     def id_str(self) -> str:
@@ -210,6 +234,11 @@ class User(BaseModel):
     def github_username_str(self) -> str | None:
         """GitHub username как строка для схем"""
         return self.github_username
+
+    @property
+    def is_superuser(self) -> bool:
+        """Проверка на суперпользователя"""
+        return self.role == UserRole.ADMIN
 
     time_entries = relationship(
         "TimeEntry",

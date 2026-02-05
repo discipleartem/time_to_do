@@ -118,6 +118,12 @@ class Sprint(BaseModel):
         cascade="all, delete-orphan",
     )
 
+    metrics = relationship(
+        "SprintMetrics",
+        back_populates="sprint",
+        cascade="all, delete-orphan",
+    )
+
     def __repr__(self) -> str:
         return f"<Sprint(name={self.name}, status={self.status})>"
 

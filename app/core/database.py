@@ -9,7 +9,8 @@ from typing import TypeVar
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
-from app.models.base import Base
+
+__all__ = ["engine", "AsyncSessionLocal", "get_db", "init_db", "close_db"]
 
 T = TypeVar("T")
 
@@ -90,6 +91,8 @@ async def get_db_session_context() -> AsyncGenerator[AsyncSession]:
 
 async def init_db() -> None:
     """Инициализация базы данных - создание всех таблиц"""
+    from app.models.base import Base
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

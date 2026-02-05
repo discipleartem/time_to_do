@@ -11,8 +11,9 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.core.database import Base, get_db
+from app.core.database import get_db
 from app.main import app
+from app.models.base import Base
 
 # Тестовая база данных
 TEST_DATABASE_URL = (
@@ -101,9 +102,9 @@ async def db_session():
         expire_on_commit=False,
     )
 
-    # Создаем таблицы если их нет
+    # Создаем таблицы если их нет (checkfirst=True предотвращает ошибку дублирования)
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
     # Используем транзакцию для изоляции
     async with test_engine.begin() as conn:
@@ -186,11 +187,21 @@ async def test_user_token(auth_headers):
 async def test_project_with_user(auth_headers, db_session: AsyncSession):
     """Создает тестовый проект с пользователем"""
     from app.auth.service import AuthService
+    from app.core.security import verify_token
     from app.models.project import Project
 
-    # Получаем пользователя из auth_headers
+    token = auth_headers["access_token"]
+    user_email = verify_token(token)  # verify_token возвращает email (string)
+
+    if not user_email:
+        raise ValueError("Could not extract user email from token")
+
+    # Получаем пользователя по email из токена
     auth_service = AuthService(db_session)
-    user = await auth_service.get_user_by_email("test@example.com")
+    user = await auth_service.get_user_by_email(user_email)
+
+    if not user:
+        raise ValueError(f"User not found for email: {user_email}")
 
     project = Project(
         name="Test Project",

@@ -2,6 +2,14 @@
 SQLAlchemy модели данных
 """
 
+from .analytics import (
+    AnalyticsEvent,
+    AnalyticsReport,
+    Dashboard,
+    ProjectMetrics,
+    SprintMetrics,
+    UserMetrics,
+)
 from .base import BaseModel
 from .file import File, FileType
 from .notification import Notification, NotificationType
@@ -48,4 +56,10 @@ __all__ = [
     "UserAddOn",
     "UsageTracker",
     "BillingTransaction",
+    "AnalyticsEvent",
+    "ProjectMetrics",
+    "UserMetrics",
+    "SprintMetrics",
+    "AnalyticsReport",
+    "Dashboard",
 ]

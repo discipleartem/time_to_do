@@ -1,7 +1,7 @@
 """Add files table for file management system
 
 Revision ID: add_files_table
-Revises: add_search_models
+Revises: add_share_link_model
 Create Date: 2026-02-05 02:46:00.000000
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "add_files_table"
-down_revision: str | None = "add_search_models"
+down_revision: str | None = "add_share_link_model"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -49,7 +49,7 @@ def upgrade() -> None:
     )
 
     # Create indexes
-    op.create_index(op.f("ix_files_downloader_id"), "files", ["uploader_id"])
+    op.create_index(op.f("ix_files_uploader_id"), "files", ["uploader_id"])
     op.create_index(op.f("ix_files_project_id"), "files", ["project_id"])
     op.create_index(op.f("ix_files_task_id"), "files", ["task_id"])
     op.create_index(op.f("ix_files_file_type"), "files", ["file_type"])
