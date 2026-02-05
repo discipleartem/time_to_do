@@ -35,6 +35,7 @@ class Settings(BaseSettings):
         """Валидация URL базы данных"""
         if isinstance(v, str):
             return v
+        # Если DATABASE_URL не указан, используем PostgreSQL по умолчанию
         values = info.data or {}
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",

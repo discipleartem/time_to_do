@@ -464,6 +464,15 @@ async def delete_dashboard(
     raise HTTPException(status_code=501, detail="Not implemented yet")
 
 
+# === Тестовый эндпоинт (без аутентификации) ===
+
+
+@router.get("/test", response_model=dict[str, str])
+async def test_analytics() -> dict[str, str]:
+    """Тестовый эндпоинт для проверки работы analytics API"""
+    return {"status": "ok", "message": "Analytics API работает"}
+
+
 # === Общая аналитика ===
 
 

@@ -12,8 +12,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
-from app.core.database import Base
 from app.models import *  # noqa: F403  # Импортируем все модели
+from app.models.base import Base
 
 if TYPE_CHECKING:
     pass

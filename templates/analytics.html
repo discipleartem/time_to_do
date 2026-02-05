@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Аналитика - {{ settings.PROJECT_NAME }}{% endblock %}
+
+{% block extra_css %}
+<!-- Chart.js для графиков -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Date Range Picker -->
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/locale/ru.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Заголовок страницы -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-bar-chart-line me-2"></i>Аналитика и дашборды
+                    </h1>
+                    <p class="text-muted mb-0">Комплексная аналитика проектов и производительности</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Обновить
+                    </button>
+                    <button type="button" class="btn btn-primary" id="exportBtn">
+                        <i class="bi bi-download me-1"></i>Экспорт
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="filtersForm" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="dateRange" class="form-label">Период</label>
+                            <input type="text" class="form-control" id="dateRange" name="dateRange"
+                                   placeholder="Выберите период">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="projectFilter" class="form-label">Проект</label>
+                            <select class="form-select" id="projectFilter" name="projectFilter">
+                                <option value="">Все проекты</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="periodType" class="form-label">Группировка</label>
+                            <select class="form-select" id="periodType" name="periodType">
+                                <option value="daily">По дням</option>
+                                <option value="weekly">По неделям</option>
+                                <option value="monthly">По месяцам</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="userFilter" class="form-label">Пользователь</label>
+                            <select class="form-select" id="userFilter" name="userFilter">
+                                <option value="">Все пользователи</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel me-1"></i>Применить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ключевые метрики -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Выполнено задач</h6>
+                            <h3 class="mb-0" id="tasksCompletedMetric">0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-2"></i>
+                        </div>
+                    </div>
+                    <small class="text-white-50">За выбранный период</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Время работы</h6>
+                            <h3 class="mb-0" id="timeLoggedMetric">0ч</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock fs-2"></i>
+                        </div>
+                    </div>
+                    <small class="text-white-50">За выбранный период</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Активные проекты</h6>
+                            <h3 class="mb-0" id="activeProjectsMetric">0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-folder fs-2"></i>
+                        </div>
+                    </div>
+                    <small class="text-white-50">Всего проектов</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Производительность</h6>
+                            <h3 class="mb-0" id="productivityMetric">0%</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-graph-up fs-2"></i>
+                        </div>
+                    </div>
+                    <small class="text-white-50">Выполнение плана</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Динамика выполнения задач
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="chartType" id="chartTasks" value="tasks" checked>
+                        <label class="btn btn-outline-primary btn-sm" for="chartTasks">Задачи</label>
+
+                        <input type="radio" class="btn-check" name="chartType" id="chartTime" value="time">
+                        <label class="btn btn-outline-primary btn-sm" for="chartTime">Время</label>
+
+                        <input type="radio" class="btn-check" name="chartType" id="chartProductivity" value="productivity">
+                        <label class="btn btn-outline-primary btn-sm" for="chartProductivity">Продуктивность</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="mainChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Распределение по проектам
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="projectsChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Детальные таблицы -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ol me-2"></i>Топ задач по времени
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="topTasksTable">
+                            <thead>
+                                <tr>
+                                    <th>Задача</th>
+                                    <th>Проект</th>
+                                    <th>Время</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        <i class="bi bi-hourglass-split me-2"></i>Загрузка данных...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people me-2"></i>Активность пользователей
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="usersActivityTable">
+                            <thead>
+                                <tr>
+                                    <th>Пользователь</th>
+                                    <th>Задач</th>
+                                    <th>Время</th>
+                                    <th>Продуктивность</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        <i class="bi bi-hourglass-split me-2"></i>Загрузка данных...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно экспорта -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Экспорт аналитики</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="exportFormat" class="form-label">Формат</label>
+                    <select class="form-select" id="exportFormat">
+                        <option value="excel">Excel (.xlsx)</option>
+                        <option value="pdf">PDF (.pdf)</option>
+                        <option value="csv">CSV (.csv)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="exportData" class="form-label">Данные для экспорта</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="exportMetrics" checked>
+                        <label class="form-check-label" for="exportMetrics">
+                            Ключевые метрики
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="exportCharts" checked>
+                        <label class="form-check-label" for="exportCharts">
+                            Графики и диаграммы
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="exportTables" checked>
+                        <label class="form-check-label" for="exportTables">
+                            Детальные таблицы
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmExportBtn">
+                    <i class="bi bi-download me-1"></i>Экспортировать
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', path='/js/analytics.js') }}"></script>
+{% endblock %}

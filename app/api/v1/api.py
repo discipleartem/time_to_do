@@ -5,6 +5,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    analytics_router,
     auth_router,
     files_router,
     github_router,
@@ -101,4 +102,10 @@ api_router.include_router(
     time_entries_router,
     prefix="/time-entries",
     tags=["Time Tracking"],
+)
+
+# Аналитика
+api_router.include_router(
+    analytics_router,
+    tags=["Аналитика"],
 )

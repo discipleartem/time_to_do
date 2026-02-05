@@ -218,6 +218,18 @@ async def files_page(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_page(request: Request) -> HTMLResponse:
+    """
+    Страница аналитики и дашбордов
+    """
+    return templates.TemplateResponse(
+        request,
+        "analytics.html",
+        {"settings": settings},
+    )
+
+
 # Exception handlers
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(
