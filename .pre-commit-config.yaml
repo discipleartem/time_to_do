@@ -19,3 +19,21 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: .venv/bin/mypy
+        language: system
+        types: [python]
+        args: [app/, --explicit-package-bases]
+        pass_filenames: false
+
+      - id: bandit
+        name: bandit
+        entry: .venv/bin/bandit
+        language: system
+        types: [python]
+        args: [-r, app/, --skip, B101]
+        pass_filenames: false

@@ -1,6 +1,6 @@
 # Makefile for Time to DO
 
-.PHONY: setup dev dev-frontend test test-fast test-unit test-medium test-setup lint clean migrate migrate-down migration reset-db docker-dev docker-prod docker-up docker-stop docker-restart docker-logs docker-build docker-build-clean docker-images docker-clean render-deploy render-status shell db-shell redis-shell help docs
+.PHONY: setup dev dev-frontend test test-fast test-unit test-medium test-setup lint clean pre-commit migrate migrate-down migration reset-db docker-dev docker-prod docker-up docker-stop docker-restart docker-logs docker-build docker-build-clean docker-images docker-clean render-deploy render-status shell db-shell redis-shell help docs
 
 # =============================================================================
 # 🚀 УСТАНОВКА И НАСТРОЙКА
@@ -13,6 +13,10 @@ setup:
 # =============================================================================
 # 🛠️ РАЗРАБОТКА
 # =============================================================================
+
+pre-commit:
+	@echo "🔍 Подготовка к коммиту без конфликтов..."
+	./scripts/pre-commit-helper.sh
 
 dev:
 	@echo "🚀 Запуск сервера разработки..."
@@ -270,6 +274,7 @@ help:
 	@echo "=============================================================================="
 	@echo " 🛠️ РАЗРАБОТКА"
 	@echo "=============================================================================="
+	@echo "   make pre-commit     - Подготовка к коммиту без конфликтов"
 	@echo "   make dev            - Запуск сервера разработки"
 	@echo "   make dev-frontend   - Запуск с фронтендом (Bootstrap 5)"
 	@echo "   make shell          - Python shell с моделями"
