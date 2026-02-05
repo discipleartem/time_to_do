@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db_session_context
 from app.models.project import Project, ProjectMember, ProjectRole
+from app.models.search import SearchableType
 from app.models.task import Task
 from app.models.user import User
 from app.schemas.project import (
@@ -17,6 +18,7 @@ from app.schemas.project import (
     ProjectStats,
     ProjectUpdate,
 )
+from app.services.search_decorators import auto_index, auto_index_delete
 
 
 class ProjectService:
@@ -26,6 +28,7 @@ class ProjectService:
         """Инициализация сервиса с сессией базы данных"""
         self.db = db
 
+    @auto_index(SearchableType.PROJECT)
     async def create_project(
         self, project_data: ProjectCreate | dict, owner_id: str
     ) -> Project:
@@ -117,6 +120,7 @@ class ProjectService:
 
         return list(projects)
 
+    @auto_index(SearchableType.PROJECT)
     async def update_project(
         self, project_id: str, project_data: ProjectUpdate, user_id: str
     ) -> Project | None:
@@ -139,6 +143,7 @@ class ProjectService:
 
         return project
 
+    @auto_index_delete(SearchableType.PROJECT)
     async def delete_project(self, project_id: str, user_id: str) -> bool:
         """Удаление проекта"""
         # Проверяем права доступа (только владелец может удалять)

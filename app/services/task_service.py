@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db_session_context
 from app.models.project import Project, ProjectMember
+from app.models.search import SearchableType
 from app.models.task import Comment, Task, TaskStatus
 from app.schemas.task import (
     TaskCreate,
@@ -19,6 +20,7 @@ from app.schemas.task import (
     TaskStats,
     TaskUpdate,
 )
+from app.services.search_decorators import auto_index, auto_index_delete
 
 
 class TaskService:
@@ -28,6 +30,7 @@ class TaskService:
         """Инициализация сервиса с сессией базы данных"""
         self.db = db
 
+    @auto_index(SearchableType.TASK)
     async def create_task(
         self, task_data: TaskCreate | dict, project_id: str, creator_id: str
     ) -> Task:
@@ -227,6 +230,7 @@ class TaskService:
 
         return list(tasks)
 
+    @auto_index(SearchableType.TASK)
     async def update_task(
         self, task_id: str, task_data: TaskUpdate, user_id: str
     ) -> Task | None:
@@ -320,6 +324,7 @@ class TaskService:
 
         return task
 
+    @auto_index_delete(SearchableType.TASK)
     async def delete_task(self, task_id: str, user_id: str) -> bool:
         """Удаление задачи"""
         # Проверяем доступ к задаче с подзадачами
@@ -360,6 +365,7 @@ class TaskService:
 
             return updated_tasks
 
+    @auto_index(SearchableType.COMMENT)
     async def add_comment(self, task_id: str, user_id: str, content: str) -> Comment:
         """Добавление комментария к задаче"""
         # Проверяем доступ к задаче
@@ -385,6 +391,7 @@ class TaskService:
 
         return comment
 
+    @auto_index(SearchableType.COMMENT)
     async def update_comment(
         self, comment_id: uuid.UUID, user_id: uuid.UUID, content: str
     ) -> Comment | None:
@@ -408,6 +415,7 @@ class TaskService:
 
         return comment
 
+    @auto_index_delete(SearchableType.COMMENT)
     async def delete_comment(self, comment_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         """Удаление комментария"""
         # Получаем комментарий
