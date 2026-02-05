@@ -74,9 +74,42 @@ class Settings(BaseSettings):
     EMAILS_FROM_EMAIL: str | None = None
     EMAILS_FROM_NAME: str | None = None
 
-    # File uploads (Enterprise feature)
+    # File uploads
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     UPLOAD_DIR: str = "uploads"
+    ALLOWED_EXTENSIONS: list[str] = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".webp",  # Images
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".xls",
+        ".xlsx",
+        ".ppt",
+        ".pptx",
+        ".txt",
+        ".csv",  # Documents
+        ".mp4",
+        ".avi",
+        ".mov",
+        ".wmv",
+        ".flv",
+        ".webm",  # Videos
+        ".mp3",
+        ".wav",
+        ".ogg",
+        ".flac",
+        ".aac",  # Audio
+        ".zip",
+        ".rar",
+        ".7z",
+        ".tar",
+        ".gz",  # Archives
+    ]
 
     # WebSocket
     WEBSOCKET_HEARTBEAT_INTERVAL: int = 30
@@ -93,3 +126,8 @@ class Settings(BaseSettings):
 
 # Создание экземпляра настроек
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Получить экземпляр настроек"""
+    return settings

@@ -18,7 +18,14 @@ async def test_task_service_improvements(db_session: AsyncSession):
     ✅ Тест улучшений TaskService согласно лучшим практикам
     """
     # Создаем пользователя и проект
-    user = User(email="test@example.com", username="testuser", full_name="Test User")
+    import uuid
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    user = User(
+        email=f"test_{unique_suffix}@example.com",
+        username=f"testuser_{unique_suffix}",
+        full_name="Test User",
+    )
     db_session.add(user)
     await db_session.flush()
 

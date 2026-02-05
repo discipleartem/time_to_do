@@ -52,7 +52,7 @@ class TestProjectWorkflow:
             task_response = await client.post(
                 "/api/v1/tasks/", json=task_data, headers=headers
             )
-            assert task_response.status_code == 200
+            assert task_response.status_code == 201
             tasks.append(task_response.json())
 
         # 4. Добавление комментариев к задачам
@@ -63,7 +63,7 @@ class TestProjectWorkflow:
                 json=comment_data,
                 headers=headers,
             )
-            assert comment_response.status_code == 200
+            assert comment_response.status_code == 201
 
         # 5. Проверка получения всех задач проекта
         tasks_response = await client.get(
@@ -157,7 +157,7 @@ class TestProjectWorkflow:
             json={"content": "Started working on this task"},
             headers=member_headers,
         )
-        assert comment_response.status_code == 200
+        assert comment_response.status_code == 201
 
         # 8. Владелец видит обновления
         updated_task_response = await client.get(
@@ -380,7 +380,7 @@ class TestUserManagementWorkflow:
                 task_response = await client.post(
                     "/api/v1/tasks/", json=task_data, headers=headers
                 )
-                assert task_response.status_code == 200
+                assert task_response.status_code == 201
                 total_tasks += 1
 
         # 6. Проверка получения всех проектов

@@ -20,6 +20,13 @@ engine = create_async_engine(
     future=True,
     pool_pre_ping=True,
     pool_recycle=300,
+    connect_args={
+        "server_settings": {
+            "application_name": "timeto_do",
+            "jit": "off",  # Отключаем JIT для стабильности
+        },
+        "prepared_statement_cache_size": 0,  # Отключаем кэш prepared statements
+    },
 )
 
 # Создание фабрики сессий

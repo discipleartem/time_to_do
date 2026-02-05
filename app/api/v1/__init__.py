@@ -3,12 +3,13 @@ API v1 модули
 """
 
 from .auth import router as auth_router
+from .files import router as files_router
 from .github import router as github_router
 from .notifications import router as notifications_router
 from .projects import router as projects_router
 from .search import router as search_router
-from .share_links import router as share_links_router
 from .sprints import router as sprints_router
+from .subscription import router as subscription_router
 from .tasks import router as tasks_router
 from .time_entries import router as time_entries_router
 from .users import router as users_router
@@ -26,4 +27,6 @@ __all__ = [
     "share_links_router",
     "search_router",
     "websocket_router",
+    "files_router",
+    "subscription_router",
 ]

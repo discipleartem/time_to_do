@@ -9,9 +9,10 @@ import bcrypt
 import factory
 from factory import fuzzy
 
+from app.models.file import File, FileType
 from app.models.project import Project, ProjectStatus
 from app.models.sprint import Sprint, SprintStatus
-from app.models.task import Task, TaskPriority, TaskStatus
+from app.models.task import StoryPoint, Task, TaskPriority, TaskStatus
 from app.models.user import User, UserRole
 
 
@@ -49,7 +50,7 @@ class ProjectFactory(factory.Factory):
     status = ProjectStatus.ACTIVE
     is_public = False
     allow_external_sharing = True
-    max_members = 10
+    max_members = "10"
     owner = factory.SubFactory(UserFactory)
 
     @factory.post_generation
@@ -76,7 +77,15 @@ class TaskFactory(factory.Factory):
     priority = fuzzy.FuzzyChoice(
         [TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH]
     )
-    story_point = fuzzy.FuzzyChoice([1, 2, 3, 5, 8])
+    story_point = fuzzy.FuzzyChoice(
+        [
+            StoryPoint.ONE,
+            StoryPoint.TWO,
+            StoryPoint.THREE,
+            StoryPoint.FIVE,
+            StoryPoint.EIGHT,
+        ]
+    )
     estimated_hours = fuzzy.FuzzyChoice([1, 2, 4, 8, 16])
 
     # Связи
@@ -264,3 +273,28 @@ class TestScenariosFactory:
             "task": task,
             "time_entries": time_entries,
         }
+
+
+class FileFactory(factory.Factory):
+    """Фабрика для создания файлов"""
+
+    class Meta:
+        model = File
+
+    filename = factory.LazyAttribute(lambda o: f"file_{uuid.uuid4().hex[:8]}.txt")
+    original_filename = factory.LazyAttribute(
+        lambda o: f"file_{uuid.uuid4().hex[:8]}.txt"
+    )
+    file_path = factory.LazyAttribute(lambda o: f"/tmp/file_{uuid.uuid4().hex[:8]}.txt")
+    file_size = fuzzy.FuzzyInteger(100, 10000)
+    mime_type = "text/plain"
+    file_type = FileType.DOCUMENT
+    description = factory.Faker("text", max_nb_chars=200)
+    checksum = factory.LazyAttribute(lambda o: uuid.uuid4().hex)
+    is_public = False
+    is_deleted = False
+    download_count = 0
+    uploaded_at = factory.LazyFunction(lambda: datetime.now(UTC))
+    uploader_id = factory.LazyAttribute(
+        lambda o: o.uploader.id if hasattr(o, "uploader") else uuid.uuid4()
+    )

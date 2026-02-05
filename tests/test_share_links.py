@@ -7,10 +7,20 @@ from uuid import uuid4
 import pytest
 
 from app.models.project import Project, ProjectMember, ProjectRole, ProjectStatus
-from app.models.share_link import ShareLink, SharePermission
+from app.models.share_link import ShareableType, ShareLink, SharePermission
 from app.models.user import User
-from app.schemas.share_link import ShareableType, ShareLinkCreate
+from app.schemas.share_link import ShareLinkCreate
 from app.services.share_link_service import ShareLinkService
+
+
+def create_test_user():
+    """Создать тестового пользователя с уникальными данными"""
+    unique_suffix = uuid4().hex[:8]
+    return User(
+        email=f"test_{unique_suffix}@example.com",
+        username=f"testuser_{unique_suffix}",
+        hashed_password="hashed_password",
+    )
 
 
 @pytest.mark.asyncio
@@ -19,11 +29,7 @@ class TestShareLinkModel:
 
     async def test_share_link_creation(self, db_session):
         """Тест создания публичной ссылки."""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -48,18 +54,14 @@ class TestShareLinkModel:
 
     async def test_share_link_is_accessible(self, db_session):
         """Тест проверки доступности ссылки."""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
 
         # Активная ссылка
         active_link = ShareLink(
-            token="active_token",
+            token=f"active_token_{uuid4().hex[:8]}",
             shareable_type=ShareableType.PROJECT,
             shareable_id=uuid4(),
             permission=SharePermission.VIEW,
@@ -70,7 +72,7 @@ class TestShareLinkModel:
 
         # Неактивная ссылка
         inactive_link = ShareLink(
-            token="inactive_token",
+            token=f"inactive_token_{uuid4().hex[:8]}",
             shareable_type=ShareableType.PROJECT,
             shareable_id=uuid4(),
             permission=SharePermission.VIEW,
@@ -85,17 +87,13 @@ class TestShareLinkModel:
 
     async def test_share_link_increment_views(self, db_session):
         """Тест увеличения счетчика просмотров."""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
 
         share_link = ShareLink(
-            token="views_token",
+            token=f"views_token_{uuid4().hex[:8]}",
             shareable_type=ShareableType.PROJECT,
             shareable_id=uuid4(),
             permission=SharePermission.VIEW,
@@ -116,17 +114,17 @@ class TestShareLinkModel:
 
     async def test_share_link_to_dict(self, db_session):
         """Тест преобразования в словарь."""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
 
+        # Сохраняем сгенерированный токен для сравнения
+        token_suffix = uuid4().hex[:8]
+        token = f"dict_token_{token_suffix}"
+
         share_link = ShareLink(
-            token="dict_token",
+            token=token,
             shareable_type=ShareableType.TASK,
             shareable_id=uuid4(),
             permission=SharePermission.COMMENT,
@@ -140,7 +138,7 @@ class TestShareLinkModel:
 
         link_dict = share_link.to_dict()
 
-        assert link_dict["token"] == "dict_token"
+        assert link_dict["token"] == token
         assert link_dict["shareable_type"] == ShareableType.TASK
         assert link_dict["permission"] == SharePermission.COMMENT
         assert link_dict["title"] == "Test Link"
@@ -157,11 +155,7 @@ class TestShareLinkService:
     async def test_create_share_link(self, db_session):
         """Тест создания публичной ссылки через сервис."""
         # Создаем пользователя
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -203,11 +197,7 @@ class TestShareLinkService:
 
     async def test_get_user_share_links(self, db_session):
         """Тест получения публичных ссылок пользователя."""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -254,11 +244,7 @@ class TestShareLinkService:
 
     async def test_delete_share_link(self, db_session):
         """Тест удаления публичной ссылки."""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)

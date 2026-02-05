@@ -2,6 +2,8 @@
 Интеграционные тесты для API endpoints
 """
 
+import uuid
+
 import pytest
 
 
@@ -33,9 +35,12 @@ class TestAPIIntegration:
     @pytest.mark.asyncio
     async def test_register_user_success(self, client):
         """Тест успешной регистрации пользователя"""
+        import uuid
+
+        unique_suffix = uuid.uuid4().hex[:8]
         user_data = {
-            "email": "test@example.com",
-            "username": "testuser",
+            "email": f"test_{unique_suffix}@example.com",
+            "username": f"testuser_{unique_suffix}",
             "full_name": "Test User",
             "password": "password123",
         }
@@ -408,7 +413,7 @@ class TestAPIIntegration:
         }
         response = await client.post("/api/v1/tasks/", json=task_data, headers=headers)
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["title"] == task_data["title"]
         assert data["description"] == task_data["description"]
@@ -553,7 +558,7 @@ class TestAPIIntegration:
     async def test_missing_required_fields(self, client):
         """Тест отсутствия обязательных полей"""
         incomplete_data = {
-            "username": "testuser",
+            "username": f"testuser_{uuid.uuid4().hex[:8]}",
             # Отсутствует email, password, full_name
         }
 
@@ -788,9 +793,10 @@ class TestAPIIntegration:
         ]
 
         for email in invalid_emails:
+            unique_suffix = uuid.uuid4().hex[:8]
             user_data = {
                 "email": email,
-                "username": "testuser",
+                "username": f"testuser_{unique_suffix}",
                 "full_name": "Test User",
                 "password": "password123",
             }
@@ -825,7 +831,7 @@ class TestAPIIntegration:
         """Тест защиты от SQL инъекций"""
         malicious_data = {
             "email": "test'; DROP TABLE users; --@example.com",
-            "username": "testuser",
+            "username": f"testuser_{uuid.uuid4().hex[:8]}",
             "full_name": "Test User",
             "password": "password123",
         }

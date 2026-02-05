@@ -24,6 +24,13 @@ engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
+    connect_args={
+        "server_settings": {
+            "application_name": "timeto_do_test",
+            "jit": "off",  # Отключаем JIT для стабильности
+        },
+        "prepared_statement_cache_size": 0,  # Отключаем кэш prepared statements
+    },
 )
 
 # Создание тестовой сессии
@@ -52,6 +59,13 @@ async def db_engine():
         pool_size=5,
         max_overflow=10,
         poolclass=None,  # Отключаем пул для тестов
+        connect_args={
+            "server_settings": {
+                "application_name": "timeto_do_test",
+                "jit": "off",  # Отключаем JIT для стабильности
+            },
+            "prepared_statement_cache_size": 0,  # Отключаем кэш prepared statements
+        },
     )
 
     # Инициализация БД один раз за сессию
@@ -65,13 +79,20 @@ async def db_engine():
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
-    """Создание тестовой сессии базы данных с изолированным engine"""
+    """Создание тестовой сессии базы данных с изолированной транзакцией"""
     test_engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         pool_pre_ping=True,
         pool_size=1,
         max_overflow=0,
+        connect_args={
+            "server_settings": {
+                "application_name": "timeto_do_test",
+                "jit": "off",  # Отключаем JIT для стабильности
+            },
+            "prepared_statement_cache_size": 0,  # Отключаем кэш prepared statements
+        },
     )
 
     TestingSessionLocal = sessionmaker(
@@ -80,12 +101,17 @@ async def db_session():
         expire_on_commit=False,
     )
 
+    # Создаем таблицы если их нет
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    async with TestingSessionLocal() as session:
-        yield session
+    # Используем транзакцию для изоляции
+    async with test_engine.begin() as conn:
+        async with TestingSessionLocal(bind=conn) as session:
+            try:
+                yield session
+            finally:
+                await session.rollback()
 
     await test_engine.dispose()
 
@@ -96,14 +122,7 @@ def override_get_db(db_session: AsyncSession):
 
     async def _override_get_db():
         print("DEBUG: Using test database session!")
-        try:
-            yield db_session
-            await db_session.commit()
-        except Exception:
-            await db_session.rollback()
-            raise
-        finally:
-            await db_session.close()
+        yield db_session
 
     return _override_get_db
 
@@ -111,6 +130,11 @@ def override_get_db(db_session: AsyncSession):
 @pytest_asyncio.fixture
 async def client(override_get_db):
     """Создание тестового клиента"""
+    from app.schemas.auth import update_auth_forward_refs
+
+    # Обновляем forward references для Pydantic
+    update_auth_forward_refs()
+
     app.dependency_overrides[get_db] = override_get_db
 
     async with AsyncClient(
@@ -129,9 +153,12 @@ async def auth_headers(db_session: AsyncSession):
     from app.schemas.auth import RegisterRequest
 
     auth_service = AuthService(db_session)
+    import uuid
+
+    unique_suffix = uuid.uuid4().hex[:8]
     user_data = RegisterRequest(
-        email="test@example.com",
-        username="testuser",
+        email=f"test_{unique_suffix}@example.com",
+        username=f"testuser_{unique_suffix}",
         full_name="Test User",
         password="testpassword123",
     )
@@ -140,7 +167,7 @@ async def auth_headers(db_session: AsyncSession):
         user, access_token, _ = await auth_service.register(user_data)
         await db_session.commit()
     except Exception:
-        user = await auth_service.get_user_by_email("test@example.com")
+        user = await auth_service.get_user_by_email(f"test_{unique_suffix}@example.com")
         if user:
             access_token = create_access_token(subject=user.email)
         else:
@@ -185,9 +212,12 @@ async def test_project_with_user(auth_headers, db_session: AsyncSession):
 @pytest.fixture
 def test_user_data():
     """Данные тестового пользователя"""
+    import uuid
+
+    unique_suffix = uuid.uuid4().hex[:8]
     return {
-        "email": "test@example.com",
-        "username": "testuser",
+        "email": f"test_{unique_suffix}@example.com",
+        "username": f"testuser_{unique_suffix}",
         "full_name": "Test User",
         "password": "testpassword123",
     }
@@ -247,6 +277,127 @@ async def async_task_factory(db_session: AsyncSession):
         return task
 
     return create_task
+
+
+@pytest_asyncio.fixture
+async def async_file_factory(db_session: AsyncSession):
+    """Асинхронная фабрика файлов с сохранением в БД"""
+    from tests.factories import FileFactory
+
+    async def create_file(**kwargs):
+        file = FileFactory(**kwargs)
+        db_session.add(file)
+        await db_session.flush()
+        return file
+
+    return create_file
+
+
+# Тестовые сущности
+@pytest_asyncio.fixture
+async def test_user(async_user_factory):
+    """Тестовый пользователь"""
+    import uuid
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    return await async_user_factory(
+        username=f"testuser_{unique_suffix}",
+        email=f"test_{unique_suffix}@example.com",
+        full_name="Test User",
+    )
+
+
+@pytest_asyncio.fixture
+async def other_user(async_user_factory):
+    """Другой тестовый пользователь"""
+    import uuid
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    return await async_user_factory(
+        username=f"otheruser_{unique_suffix}",
+        email=f"other_{unique_suffix}@example.com",
+        full_name="Other User",
+    )
+
+
+@pytest_asyncio.fixture
+async def test_project(async_project_factory, test_user, db_session: AsyncSession):
+    """Тестовый проект"""
+    # Сначала получим user из той же сессии
+    from sqlalchemy import select
+
+    from app.models.user import User
+
+    stmt = select(User).where(User.id == test_user.id)
+    result = await db_session.execute(stmt)
+    user = result.scalar_one()
+
+    project = await async_project_factory(
+        name="Test Project",
+        description="Test project description",
+        owner_id=user.id,
+    )
+
+    # Коммитим изменения, чтобы они были видны в тестах
+    await db_session.commit()
+    return project
+
+
+@pytest_asyncio.fixture
+async def test_task(
+    async_task_factory, test_project, test_user, db_session: AsyncSession
+):
+    """Тестовая задача"""
+    task = await async_task_factory(
+        title="Test Task",
+        description="Test task description",
+        project_id=test_project.id,
+        creator_id=test_user.id,
+        assignee_id=test_user.id,
+    )
+
+    # Убедимся, что задача сохранена в той же сессии
+    await db_session.commit()
+    return task
+
+
+@pytest_asyncio.fixture
+async def test_file(async_file_factory, test_user):
+    """Тестовый файл"""
+    return await async_file_factory(
+        filename="test_file.txt",
+        original_filename="test_file.txt",
+        file_path="/tmp/test_file.txt",
+        file_size=1024,
+        mime_type="text/plain",
+        uploader_id=test_user.id,
+    )
+
+
+@pytest_asyncio.fixture
+async def authenticated_user(test_user, db_session: AsyncSession):
+    """Фикстура для аутентифицированного пользователя"""
+    from app.core.security import create_access_token
+
+    access_token = create_access_token(subject=test_user.email)
+    return {
+        "user": test_user,
+        "headers": {"Authorization": f"Bearer {access_token}"},
+        "db": db_session,  # Используем ту же сессию, что и другие фикстуры
+    }
+
+
+@pytest_asyncio.fixture
+async def other_user_auth(other_user, db_session: AsyncSession):
+    """Фикстура для другого аутентифицированного пользователя"""
+    from app.core.security import create_access_token
+
+    access_token = create_access_token(subject=other_user.email)
+    return {
+        "user": other_user,
+        "headers": {"Authorization": f"Bearer {access_token}"},
+        "db": db_session,
+    }
 
 
 @pytest.fixture

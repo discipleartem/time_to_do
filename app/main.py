@@ -206,6 +206,18 @@ async def search_page(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/files", response_class=HTMLResponse)
+async def files_page(request: Request) -> HTMLResponse:
+    """
+    Страница управления файлами
+    """
+    return templates.TemplateResponse(
+        request,
+        "files.html",
+        {"settings": settings},
+    )
+
+
 # Exception handlers
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(

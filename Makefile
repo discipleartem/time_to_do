@@ -1,6 +1,6 @@
 # Makefile for Time to DO
 
-.PHONY: setup dev dev-frontend test test-setup lint clean migrate migrate-down migration reset-db docker-dev docker-prod docker-up docker-stop docker-restart docker-logs docker-build docker-build-clean docker-images docker-clean render-deploy render-status shell db-shell redis-shell help docs
+.PHONY: setup dev dev-frontend test test-fast test-unit test-medium test-setup lint clean migrate migrate-down migration reset-db docker-dev docker-prod docker-up docker-stop docker-restart docker-logs docker-build docker-build-clean docker-images docker-clean render-deploy render-status shell db-shell redis-shell help docs
 
 # =============================================================================
 # 🚀 УСТАНОВКА И НАСТРОЙКА
@@ -59,11 +59,19 @@ redis-shell:
 
 test:
 	@echo "🧪 Запуск всех тестов..."
-	@. .venv/bin/activate && pytest tests/ --no-cov -n 1 --tb=short
+	@. .venv/bin/activate && pytest tests/ --no-cov -n 2 --tb=short --dist worksteal
 
 test-fast:
-	@echo "⚡ Быстрые тесты (без интеграционных)..."
-	@. .venv/bin/activate && pytest tests/ -m "not integration" --no-cov -n 1 --tb=short
+	@echo "⚡ Быстрые тесты (unit + API без БД)..."
+	@. .venv/bin/activate && pytest tests/test_validators*.py tests/test_config.py tests/test_exceptions.py --no-cov -n auto --tb=short --dist worksteal
+
+test-unit:
+	@echo "🔬 Только unit тесты (валидаторы)..."
+	@. .venv/bin/activate && pytest tests/test_validators*.py tests/test_config.py --no-cov -n auto --tb=short --dist worksteal
+
+test-medium:
+	@echo "🔄 Средние тесты (unit + API с ограниченной БД)..."
+	@. .venv/bin/activate && pytest tests/test_validators*.py tests/test_config.py tests/test_exceptions.py tests/test_api_integration.py --no-cov -n 2 --tb=short --dist worksteal
 
 
 test-cov:
@@ -271,9 +279,11 @@ help:
 	@echo "=============================================================================="
 	@echo " 🧪 ТЕСТИРОВАНИЕ"
 	@echo "=============================================================================="
-	@echo "   make test           - Запуск всех тестов (2:14)"
-	@echo "   make test-fast      - Быстрые тесты без интеграционных (~30 сек)"
-	@echo "   make test-cov      - Тесты с покрытием кода"
+	@echo "   make test-unit      - Только unit тесты (~6 сек)"
+	@echo "   make test-fast      - Быстрые тесты (~6 сек)"
+	@echo "   make test-medium    - Средние тесты (~30 сек)"
+	@echo "   make test-cov       - Тесты с покрытием кода (~2-3 мин)"
+	@echo "   make test           - Все тесты (~2-3 мин)"
 	@echo "   make test-setup     - Создание тестовой базы данных"
 	@echo ""
 	@echo "=============================================================================="

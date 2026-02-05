@@ -89,7 +89,7 @@ class ShareLinkService:
         query = select(ShareLink).where(ShareLink.created_by == user_id)
 
         if shareable_type:
-            model_shareable_type = ModelShareableType(shareable_type.value)
+            model_shareable_type = ModelShareableType(shareable_type)
             query = query.where(ShareLink.shareable_type == model_shareable_type)
 
         query = query.order_by(desc(ShareLink.created_at)).limit(limit).offset(offset)

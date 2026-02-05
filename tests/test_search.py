@@ -20,13 +20,16 @@ class TestSearchAPI:
     @pytest.fixture
     async def test_user(self, db_session: AsyncSession) -> User:
         """Создает тестового пользователя"""
+        import uuid
+
         import bcrypt
 
         hashed_password = bcrypt.hashpw(b"password123", bcrypt.gensalt()).decode()
+        unique_suffix = uuid.uuid4().hex[:8]
 
         user = User(
-            username="testuser",
-            email="test@example.com",
+            username=f"testuser_{unique_suffix}",
+            email=f"test_{unique_suffix}@example.com",
             full_name="Test User",
             hashed_password=hashed_password,
             is_active=True,
@@ -294,13 +297,16 @@ class TestSearchService:
     @pytest.fixture
     async def test_user(self, db_session: AsyncSession) -> User:
         """Создает тестового пользователя"""
+        import uuid
+
         import bcrypt
 
         hashed_password = bcrypt.hashpw(b"password123", bcrypt.gensalt()).decode()
+        unique_suffix = uuid.uuid4().hex[:8]
 
         user = User(
-            username="testuser",
-            email="test@example.com",
+            username=f"testuser_{unique_suffix}",
+            email=f"test_{unique_suffix}@example.com",
             full_name="Test User",
             hashed_password=hashed_password,
             is_active=True,

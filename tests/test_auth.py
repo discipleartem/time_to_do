@@ -117,10 +117,14 @@ class TestAuth:
 
     async def test_change_password(self, client: AsyncClient, test_user_data: dict):
         """Тест изменения пароля"""
+        import uuid
+
+        unique_suffix = uuid.uuid4().hex[:8]
+
         # Используем уникальный email для этого теста
         user_data = test_user_data.copy()
-        user_data["email"] = "change_password@example.com"
-        user_data["username"] = "change_password"
+        user_data["email"] = f"change_password_{unique_suffix}@example.com"
+        user_data["username"] = f"change_password_{unique_suffix}"
 
         # Регистрация
         register_response = await client.post("/api/v1/auth/register", json=user_data)

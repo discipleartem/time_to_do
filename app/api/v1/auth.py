@@ -19,9 +19,10 @@ from app.schemas.auth import (
     RefreshTokenRequest,
     RegisterRequest,
     Token,
-    update_auth_forward_refs,
 )
 from app.schemas.user import User as UserSchema
+
+__all__ = ("router", "get_current_active_user")
 
 router = APIRouter()
 
@@ -36,9 +37,6 @@ async def register(
     """
     Регистрация нового пользователя
     """
-    # Обновляем forward references если нужно
-    update_auth_forward_refs()
-
     auth_service = AuthService(db)
 
     try:
@@ -68,9 +66,6 @@ async def login(
     """
     Вход пользователя
     """
-    # Обновляем forward references если нужно
-    update_auth_forward_refs()
-
     auth_service = AuthService(db)
 
     try:
@@ -98,11 +93,8 @@ async def login_oauth2(
     db: AsyncSession = Depends(get_db),
 ) -> LoginResponse:
     """
-    Вход через OAuth2 (для совместимости)
+    Обновление токена доступа
     """
-    # Обновляем forward references если нужно
-    update_auth_forward_refs()
-
     login_request = LoginRequest(
         email=form_data.username,
         password=form_data.password,

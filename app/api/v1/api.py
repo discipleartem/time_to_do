@@ -6,12 +6,13 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     auth_router,
+    files_router,
     github_router,
     notifications_router,
     projects_router,
     search_router,
-    share_links_router,
     sprints_router,
+    subscription_router,
     tasks_router,
     time_entries_router,
     users_router,
@@ -55,13 +56,6 @@ api_router.include_router(
     tags=["GitHub OAuth"],
 )
 
-# Time entries
-api_router.include_router(
-    time_entries_router,
-    prefix="/time-entries",
-    tags=["Time Tracking"],
-)
-
 # Спринты
 api_router.include_router(
     sprints_router,
@@ -81,11 +75,18 @@ api_router.include_router(
     tags=["WebSocket"],
 )
 
-# Публичные ссылки (External Sharing)
+# Файлы
 api_router.include_router(
-    share_links_router,
-    prefix="/share-links",
-    tags=["Публичные ссылки"],
+    files_router,
+    prefix="/files",
+    tags=["Файлы"],
+)
+
+# Подписки и пакеты
+api_router.include_router(
+    subscription_router,
+    prefix="/subscription",
+    tags=["Подписки"],
 )
 
 # Поиск
@@ -93,4 +94,11 @@ api_router.include_router(
     search_router,
     prefix="/search",
     tags=["Поиск"],
+)
+
+# Time entries
+api_router.include_router(
+    time_entries_router,
+    prefix="/time-entries",
+    tags=["Time Tracking"],
 )

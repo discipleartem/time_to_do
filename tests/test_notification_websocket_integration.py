@@ -2,6 +2,7 @@
 Тесты интеграции уведомлений с WebSocket
 """
 
+import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -16,17 +17,23 @@ from app.services.notification_websocket_integration import (
 )
 
 
+def create_test_user():
+    """Создать тестового пользователя с уникальными данными"""
+    unique_suffix = uuid.uuid4().hex[:8]
+    return User(
+        email=f"test_{unique_suffix}@example.com",
+        username=f"testuser_{unique_suffix}",
+        hashed_password="hashed_password",
+    )
+
+
 @pytest.mark.asyncio
 class TestNotificationWebSocketIntegration:
     """Тесты интеграции уведомлений с WebSocket"""
 
     async def test_send_notification_to_user(self, db_session):
         """Тест отправки уведомления пользователю"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -61,11 +68,7 @@ class TestNotificationWebSocketIntegration:
 
     async def test_send_notification_to_user_error_handling(self, db_session):
         """Тест обработки ошибок при отправке уведомления"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)

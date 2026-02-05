@@ -2,6 +2,7 @@
 Базовые тесты для системы уведомлений
 """
 
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -11,17 +12,23 @@ from app.models.user import User
 from app.services.notification_service import NotificationService
 
 
+def create_test_user():
+    """Создать тестового пользователя с уникальными данными"""
+    unique_suffix = uuid.uuid4().hex[:8]
+    return User(
+        email=f"test_{unique_suffix}@example.com",
+        username=f"testuser_{unique_suffix}",
+        hashed_password="hashed_password",
+    )
+
+
 @pytest.mark.asyncio
 class TestNotificationModel:
     """Тесты модели Notification"""
 
     async def test_notification_creation(self, db_session):
         """Тест создания уведомления"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -47,11 +54,7 @@ class TestNotificationModel:
 
     async def test_notification_mark_as_read(self, db_session):
         """Тест отметки уведомления как прочитанного"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -75,11 +78,7 @@ class TestNotificationModel:
 
     async def test_notification_mark_as_unread(self, db_session):
         """Тест отметки уведомления как непрочитанного"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -105,11 +104,7 @@ class TestNotificationModel:
 
     async def test_notification_is_pending(self, db_session):
         """Тест свойства is_pending"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -140,11 +135,7 @@ class TestNotificationModel:
 
     async def test_notification_is_recent(self, db_session):
         """Тест свойства is_recent"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -175,11 +166,7 @@ class TestNotificationModel:
 
     async def test_notification_to_dict(self, db_session):
         """Тест преобразования в словарь"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -215,11 +202,7 @@ class TestNotificationService:
 
     async def test_create_notification(self, db_session):
         """Тест создания уведомления через сервис"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -241,11 +224,7 @@ class TestNotificationService:
 
     async def test_get_user_notifications(self, db_session):
         """Тест получения уведомлений пользователя"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -282,11 +261,7 @@ class TestNotificationService:
 
     async def test_get_unread_count(self, db_session):
         """Тест получения количества непрочитанных уведомлений"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -316,11 +291,7 @@ class TestNotificationService:
 
     async def test_mark_all_as_read(self, db_session):
         """Тест отметки всех уведомлений как прочитанных"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -346,11 +317,7 @@ class TestNotificationService:
 
     async def test_delete_notification(self, db_session):
         """Тест удаления уведомления"""
-        user = User(
-            email="test@example.com",
-            username="testuser",
-            hashed_password="hashed_password",
-        )
+        user = create_test_user()
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -377,16 +344,8 @@ class TestNotificationService:
 
     async def test_delete_notification_wrong_user(self, db_session):
         """Тест удаления уведомления другим пользователем"""
-        user1 = User(
-            email="test1@example.com",
-            username="testuser1",
-            hashed_password="hashed_password",
-        )
-        user2 = User(
-            email="test2@example.com",
-            username="testuser2",
-            hashed_password="hashed_password",
-        )
+        user1 = create_test_user()
+        user2 = create_test_user()
         db_session.add(user1)
         db_session.add(user2)
         await db_session.commit()

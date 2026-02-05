@@ -58,7 +58,7 @@ async def get_tasks(
     return [TaskSchema.model_validate(task) for task in tasks]
 
 
-@router.post("/", response_model=TaskSchema)
+@router.post("/", response_model=TaskSchema, status_code=status.HTTP_201_CREATED)
 async def create_task(
     task_data: TaskCreate,
     current_user: User = Depends(get_current_active_user),
@@ -256,7 +256,11 @@ async def get_task_comments(
     return [CommentSchema.model_validate(comment) for comment in comments]
 
 
-@router.post("/{task_id}/comments", response_model=CommentSchema)
+@router.post(
+    "/{task_id}/comments",
+    response_model=CommentSchema,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_task_comment(
     task_id: str,
     comment_data: CommentCreate,

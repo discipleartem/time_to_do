@@ -48,7 +48,7 @@ class TestTasks:
 
         response = await client.post("/api/v1/tasks/", json=task_data, headers=headers)
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
 
         assert data["title"] == test_task_data["title"]
@@ -236,7 +236,7 @@ class TestTasks:
 
         response = await client.post("/api/v1/tasks/", json=task_data, headers=headers)
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["due_date"] == "2024-12-31"
 
@@ -269,7 +269,7 @@ class TestTasks:
 
         response = await client.post("/api/v1/tasks/", json=task_data, headers=headers1)
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["assignee_id"] == assignee_id
 
@@ -323,7 +323,7 @@ class TestTasks:
             headers=headers,
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         comment = response.json()
         assert comment["content"] == comment_data["content"]
         assert comment["task_id"] == created_task["id"]

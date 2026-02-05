@@ -366,7 +366,10 @@ class TestUserValidatorAdvanced:
     @pytest.mark.asyncio
     async def test_validate_user_unique_username_conflict(self):
         """Тест проверки уникальности username - конфликт"""
-        username = "testuser"
+        import uuid
+
+        unique_suffix = uuid.uuid4().hex[:8]
+        username = f"testuser_{unique_suffix}"
 
         mock_user = MagicMock()  # Не AsyncMock!
 
